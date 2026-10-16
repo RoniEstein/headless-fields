@@ -18,11 +18,16 @@ everything above it. It is NOT YET IMPLEMENTED.
 
 ## Install
 
-A git dependency pinned to a tag:
+Install the release tarball for a tag:
 
 ```bash
-bun add github:RoniEstein/headless-fields#v0.3.0
+bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.3.0
 ```
+
+The lockfile pins the tarball's integrity hash. Prefer this over
+`github:RoniEstein/headless-fields#v0.3.0` or a `git+https://github.com/…`
+URL: Bun resolves both through `GITHUB_API_URL`, which Forgejo and Gitea
+Actions point at their own forge, so installs in those CI runners fail.
 
 The package ships TypeScript source. Bundlers compile it like your own code.
 For Vite SSR, keep it bundled so Node never loads `.ts` at runtime:
