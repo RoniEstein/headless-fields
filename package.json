@@ -1,0 +1,36 @@
+{
+    "name": "@tache/fields",
+    "version": "0.1.0",
+    "description": "Headless form fields: a DOM-free core (masks, rules, feedback policy, field definitions), React hooks for any renderer, and unstyled DOM parts themed by skins.",
+    "type": "module",
+    "sideEffects": false,
+    "exports": {
+        "./core": "./src/core/index.ts",
+        "./definitions": "./src/definitions/index.ts",
+        "./react": "./src/react/index.ts",
+        "./dom": "./src/dom/index.ts"
+    },
+    "files": ["src", "README.md"],
+    "scripts": {
+        "test": "bun test",
+        "types": "tsc --noEmit",
+        "check": "tsc --noEmit && bun test"
+    },
+    "peerDependencies": {
+        "react": "19"
+    },
+    "peerDependenciesMeta": {
+        "react": {
+            "optional": true
+        }
+    },
+    "devDependencies": {
+        "@happy-dom/global-registrator": "^21.0.3",
+        "@testing-library/react": "^16.3.3",
+        "@types/react": "19",
+        "@types/react-dom": "19",
+        "bun-types": "^1.4.3",
+        "react-dom": "19",
+        "typescript": "5"
+    }
+}
