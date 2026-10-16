@@ -21,8 +21,34 @@ export type {
     ClassValue,
     FieldClassNames,
     FieldSkin,
+    FieldIcon,
     FieldSlot,
     MergeClasses,
 } from './skin';
 export { FieldContext, useFieldContext } from './context';
 export type { FieldContextValue, FieldIds } from './context';
+
+// File fields: behaviour (useFileField), parts, and two starter templates.
+export { useFileField } from './files/useFileField';
+export type { FileField as FileFieldState, FileFieldIds, FileFieldOptions } from './files/useFileField';
+export {
+    FileAnnouncer,
+    FileDropArea,
+    FileDropHint,
+    FileField,
+    FileItem,
+    FileList,
+    FileName,
+    FilePreview,
+    FileRejections,
+    FileRemove,
+    FileSize,
+    FileSummary,
+    FileTrigger,
+    useFileFieldContext,
+} from './files/parts';
+export type { FileFieldProps } from './files/parts';
+export { FileDropField, FilePickerField } from './files/templates';
+export type { FileDropFieldProps, FileTemplateProps } from './files/templates';
+export { mergeProps, visuallyHidden } from './files/props';
+export type { ElementProps, RenderProp } from './files/props';

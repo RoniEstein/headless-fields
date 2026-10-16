@@ -9,7 +9,25 @@ export type FieldSlot =
     | 'input'
     | 'adornment'
     | 'indicator'
-    | 'message';
+    | 'message'
+    // File fields
+    | 'trigger'
+    | 'dropArea'
+    | 'dropHint'
+    | 'fileSummary'
+    | 'fileList'
+    | 'fileItem'
+    | 'filePreview'
+    | 'fileName'
+    | 'fileSize'
+    | 'fileRemove'
+    | 'fileRejections'
+    | 'fileRejection';
+
+/** Icons a skin can supply. Text fields use valid/invalid; file fields use
+ *  upload (in triggers), remove (in remove buttons) and file (rows without
+ *  an image preview). A part's own children always win. */
+export type FieldIcon = 'valid' | 'invalid' | 'upload' | 'remove' | 'file';
 
 export type FieldClassNames = Partial<Record<FieldSlot, string>>;
 
@@ -24,7 +42,7 @@ export type MergeClasses = (...classes: ClassValue[]) => string;
  */
 export interface FieldSkin {
     classNames?: FieldClassNames;
-    icons?: { valid?: ReactNode; invalid?: ReactNode };
+    icons?: Partial<Record<FieldIcon, ReactNode>>;
     /** Combines skin and per-field classes. Pass tailwind-merge (or the
      *  project's cn) so later classes override conflicting earlier ones. */
     merge?: MergeClasses;
