@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { healthNumber, phone, type Province } from '../src/definitions';
 import {
     Field,
+    FieldControl,
+    FieldInput,
     FieldLabel,
     FieldMessage,
     FieldRoot,
@@ -161,5 +163,47 @@ describe('static fields', () => {
         );
         expect(screen.getByText('Pick one').getAttribute('data-state')).toBe('invalid');
         expect(screen.getByText('*')).toBeTruthy();
+    });
+});
+
+describe('native mode', () => {
+    test('inside a staticField frame the input is a plain native input', () => {
+        const seen: string[] = [];
+        function Plain() {
+            const [value, setValue] = useState('');
+            return (
+                <FieldRoot field={staticField({ error: value ? '' : 'Needed', required: true })}>
+                    <FieldLabel>Org</FieldLabel>
+                    <FieldControl>
+                        <FieldInput
+                            value={value}
+                            required={false}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                                seen.push(e.target.value);
+                                setValue(e.target.value);
+                            }}
+                        />
+                    </FieldControl>
+                    <FieldMessage />
+                </FieldRoot>
+            );
+        }
+        render(<Plain />);
+        const input = screen.getByLabelText(/Org/) as HTMLInputElement;
+        expect(input.required).toBe(false);
+        expect(input.getAttribute('aria-invalid')).toBe('true');
+        fireEvent.change(input, { target: { value: 'Acme' } });
+        expect(seen).toEqual(['Acme']);
+        expect(input.value).toBe('Acme');
+        expect(screen.queryByText('Needed')).toBeNull();
+    });
+
+    test('uncontrolled native inputs keep their defaultValue', () => {
+        render(
+            <FieldRoot field={staticField()}>
+                <FieldInput defaultValue="abc" aria-label="pw" />
+            </FieldRoot>,
+        );
+        expect((screen.getByLabelText('pw') as HTMLInputElement).value).toBe('abc');
     });
 });

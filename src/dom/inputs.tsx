@@ -13,6 +13,9 @@ type TextElement = HTMLInputElement | HTMLTextAreaElement;
 
 interface TextControlOptions<E extends TextElement> {
     ref?: Ref<E>;
+    /** Explicit values win over the field's. */
+    required?: boolean;
+    disabled?: boolean;
     /** Block native form submission while the field has an issue, with the
      *  issue as the browser's message. */
     validateOnSubmit?: boolean;
@@ -35,16 +38,18 @@ function hintAttributes(input: InputHints) {
     };
 }
 
-/** Value, events, ids and ARIA shared by <FieldInput> and <FieldTextarea>. */
+/**
+ * Ids, ARIA and state attributes shared by <FieldInput> and <FieldTextarea>.
+ * With a field from useField the control is driven by it (value, events,
+ * input hints). Inside a frame-only field (staticField) it is a plain native
+ * control: value, defaultValue and onChange pass straight through.
+ */
 function useTextControl<E extends TextElement>(
     part: string,
-    { ref, validateOnSubmit = false, onFocus, onBlur }: TextControlOptions<E>,
+    { ref, required, disabled, validateOnSubmit = false, onFocus, onBlur }: TextControlOptions<E>,
 ) {
     const context: FieldContextValue = useFieldContext(part);
-    const { controller, view, ids, disabled, data } = context;
-    if (!controller) {
-        throw new Error(`<${part}> needs a field from useField, not staticField.`);
-    }
+    const { controller, view, ids, data } = context;
 
     const element = useRef<E | null>(null);
     const setRef = useCallback(
@@ -55,25 +60,33 @@ function useTextControl<E extends TextElement>(
         [ref],
     );
 
-    const issue = controller.feedback.issue;
+    const issue = controller?.feedback.issue ?? null;
     useEffect(() => {
         if (!validateOnSubmit) return;
         element.current?.setCustomValidity(issue ? issue.message : '');
     }, [validateOnSubmit, issue]);
 
+    const common = {
+        ...data,
+        ref: setRef,
+        id: ids.input,
+        disabled: disabled ?? context.disabled,
+        required: required ?? view.required,
+        'aria-invalid': view.status === 'invalid' || undefined,
+        'aria-describedby': view.message ? ids.message : undefined,
+    };
+
+    if (!controller) {
+        return { context, defaults: {}, bound: { ...common, onFocus, onBlur, placeholder: undefined } };
+    }
+
     return {
         context,
         defaults: hintAttributes(controller.definition.input),
         bound: {
-            ...data,
-            ref: setRef,
-            id: ids.input,
+            ...common,
             value: controller.display,
-            disabled,
-            required: view.required,
             placeholder: controller.definition.placeholder,
-            'aria-invalid': view.status === 'invalid' || undefined,
-            'aria-describedby': view.message ? ids.message : undefined,
             onChange: (event: { target: { value: string } }) =>
                 controller.setText(event.target.value),
             onFocus: (event: FocusEvent<E>) => {
@@ -88,13 +101,16 @@ function useTextControl<E extends TextElement>(
     };
 }
 
-export interface FieldInputProps
-    extends Omit<ComponentPropsWithRef<'input'>, 'value' | 'defaultValue' | 'onChange' | 'children'> {
+/** With a useField field, value/defaultValue/onChange are ignored: the field
+ *  drives the input. With staticField they work as on a native input. */
+export interface FieldInputProps extends Omit<ComponentPropsWithRef<'input'>, 'children'> {
     validateOnSubmit?: boolean;
 }
 
 export function FieldInput({
     ref,
+    required,
+    disabled,
     validateOnSubmit,
     onFocus,
     onBlur,
@@ -104,6 +120,8 @@ export function FieldInput({
 }: FieldInputProps) {
     const { context, defaults, bound } = useTextControl<HTMLInputElement>('FieldInput', {
         ref,
+        required,
+        disabled,
         validateOnSubmit,
         onFocus,
         onBlur,
@@ -120,13 +138,14 @@ export function FieldInput({
     );
 }
 
-export interface FieldTextareaProps
-    extends Omit<ComponentPropsWithRef<'textarea'>, 'value' | 'defaultValue' | 'onChange' | 'children'> {
+export interface FieldTextareaProps extends Omit<ComponentPropsWithRef<'textarea'>, 'children'> {
     validateOnSubmit?: boolean;
 }
 
 export function FieldTextarea({
     ref,
+    required,
+    disabled,
     validateOnSubmit,
     onFocus,
     onBlur,
@@ -136,14 +155,15 @@ export function FieldTextarea({
 }: FieldTextareaProps) {
     const { context, defaults, bound } = useTextControl<HTMLTextAreaElement>('FieldTextarea', {
         ref,
+        required,
+        disabled,
         validateOnSubmit,
         onFocus,
         onBlur,
     });
-    const { inputMode, autoComplete, autoCapitalize, maxLength, name } = defaults;
     return (
         <textarea
-            {...{ inputMode, autoComplete, autoCapitalize, maxLength, name }}
+            {...defaults}
             {...rest}
             {...bound}
             placeholder={placeholder ?? bound.placeholder}

@@ -202,6 +202,11 @@ Controls whose behaviour lives elsewhere (a Radix checkbox, radio group or
 select) reuse the frame with `staticField({ error, hint, required })` in
 place of `useField`.
 
+Inside a `staticField` frame, `<FieldInput>` and `<FieldTextarea>` behave
+as plain native controls (`value`/`defaultValue`/`onChange` pass through), so
+a project can skin its ordinary inputs with the same frame. Explicit
+`required` and `disabled` props on them win over the field's.
+
 `validateOnSubmit` blocks native submission while the field has an issue,
 with the issue as the browser's message.
 
