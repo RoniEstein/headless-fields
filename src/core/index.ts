@@ -32,3 +32,25 @@ export {
 } from './state';
 export type { FieldEvent, FieldState } from './state';
 export { digitsOnly, group, positional, slots } from './masks';
+export {
+    acceptAttribute,
+    addFiles,
+    checkFile,
+    fileKind,
+    files,
+    formatBytes,
+    KB,
+    MB,
+} from './files';
+export type {
+    AddResult,
+    FileDescriptor,
+    FileKind,
+    FileMessages,
+    FileProblem,
+    FileRejection,
+    FileRejectionCode,
+    FileRule,
+    FilesDefinition,
+    FilesOptions,
+} from './files';
