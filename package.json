@@ -1,7 +1,23 @@
 {
-    "name": "@tache/fields",
-    "version": "0.2.0",
+    "name": "headless-fields",
+    "version": "0.3.0",
     "description": "Headless form fields: a DOM-free core (masks, rules, feedback policy, field definitions), React hooks for any renderer, and unstyled DOM parts themed by skins.",
+    "license": "MIT",
+    "author": "Roni Estein",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/RoniEstein/headless-fields.git"
+    },
+    "homepage": "https://github.com/RoniEstein/headless-fields#readme",
+    "keywords": [
+        "react",
+        "react-native",
+        "forms",
+        "headless",
+        "input-mask",
+        "validation",
+        "tailwind"
+    ],
     "type": "module",
     "sideEffects": false,
     "exports": {
@@ -10,7 +26,10 @@
         "./react": "./src/react/index.ts",
         "./dom": "./src/dom/index.ts"
     },
-    "files": ["src", "README.md"],
+    "files": [
+        "src",
+        "README.md"
+    ],
     "scripts": {
         "test": "bun test",
         "types": "tsc --noEmit",

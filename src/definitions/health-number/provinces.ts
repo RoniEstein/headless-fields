@@ -2,7 +2,7 @@ import { digitsOnly, group, positional, slots } from '../../core/masks';
 
 /**
  * Province and territory health-card formats. Format checks only: real
- * identity verification happens elsewhere (pharmacy systems, Pharmacare).
+ * identity verification happens elsewhere (the issuing province).
  * Raw is canonical (no separators) and position-strict, so the display
  * format can rely on which positions hold letters and which hold digits.
  */

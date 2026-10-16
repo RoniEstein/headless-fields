@@ -1,16 +1,16 @@
-# @tache/fields
+# headless-fields
 
 Headless form fields. The behaviour is written once; the look belongs to the
 project, the page, or the section a field sits in.
 
 ```
-@tache/fields/core         DOM-free TypeScript. Masks, rules, the feedback policy,
+headless-fields/core         DOM-free TypeScript. Masks, rules, the feedback policy,
                            field state as a pure reducer. Runs anywhere.
-@tache/fields/definitions  Field definitions built from the core: phone, postal code,
+headless-fields/definitions  Field definitions built from the core: phone, postal code,
                            email, number, date, birthdate, health number by province.
-@tache/fields/react        useField: the base behaviour as a hook. No DOM, so it works
+headless-fields/react        useField: the base behaviour as a hook. No DOM, so it works
                            for React DOM and React Native.
-@tache/fields/dom          Unstyled parts, the composed <Field>, and skins.
+headless-fields/dom          Unstyled parts, the composed <Field>, and skins.
 ```
 
 A React Native renderer (`/native`) would sit beside `/dom` and reuse
@@ -21,7 +21,7 @@ everything above it. It is NOT YET IMPLEMENTED.
 A git dependency pinned to a tag:
 
 ```bash
-bun add git+ssh://git@git.jerkfactory.com/roni/fields.git#v0.2.0
+bun add github:RoniEstein/headless-fields#v0.3.0
 ```
 
 The package ships TypeScript source. Bundlers compile it like your own code.
@@ -29,7 +29,7 @@ For Vite SSR, keep it bundled so Node never loads `.ts` at runtime:
 
 ```ts
 // vite.config.ts
-ssr: { noExternal: ['@tache/fields'] }
+ssr: { noExternal: ['headless-fields'] }
 ```
 
 ## The layers
@@ -74,7 +74,7 @@ and clears, never half-typed ones. Plain text and numbers use `always`.
 ## Writing a definition
 
 ```ts
-import { defineField, hinted, labelled, masked, sized, text, validated } from '@tache/fields/core';
+import { defineField, hinted, labelled, masked, sized, text, validated } from 'headless-fields/core';
 
 export const phone = defineField(
     text(),                                                      // base: a string
@@ -144,7 +144,7 @@ Slots: `root`, `label`, `requiredMark`, `control`, `input`, `adornment`
 (with `data-side="start|end"`), `indicator`, `message`.
 
 ```tsx
-import { FieldSkinProvider, type FieldSkin } from '@tache/fields/dom';
+import { FieldSkinProvider, type FieldSkin } from 'headless-fields/dom';
 import { cn } from '@/lib/utils';
 
 export const skin: FieldSkin = {
@@ -175,8 +175,8 @@ Several themes at once:
 The composed field covers the usual layout:
 
 ```tsx
-import { Field } from '@tache/fields/dom';
-import { phone } from '@tache/fields/definitions';
+import { Field } from 'headless-fields/dom';
+import { phone } from 'headless-fields/definitions';
 
 <Field definition={phone} value={form.phone} onChange={(v) => setData('phone', v)}
        required serverError={errors.phone} />
