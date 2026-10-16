@@ -5,12 +5,12 @@ project, the page, or the section a field sits in.
 
 ```
 headless-fields/core         DOM-free TypeScript. Masks, rules, the feedback policy,
-                           field state as a pure reducer. Runs anywhere.
+                             field state as a pure reducer, file rules. Runs anywhere.
 headless-fields/definitions  Field definitions built from the core: phone, postal code,
-                           email, number, date, birthdate, health number by province.
-headless-fields/react        useField: the base behaviour as a hook. No DOM, so it works
-                           for React DOM and React Native.
-headless-fields/dom          Unstyled parts, the composed <Field>, and skins.
+                             email, number, date, birthdate, health number by province.
+headless-fields/react        useField and useFileSelection: behaviour as hooks. No DOM,
+                             so they work for React DOM and React Native.
+headless-fields/dom          Unstyled parts, the composed <Field>, file fields, and skins.
 ```
 
 A React Native renderer (`/native`) would sit beside `/dom` and reuse
@@ -21,11 +21,11 @@ everything above it. It is NOT YET IMPLEMENTED.
 Install the release tarball for a tag:
 
 ```bash
-bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.3.0
+bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.4.0
 ```
 
 The lockfile pins the tarball's integrity hash. Prefer this over
-`github:RoniEstein/headless-fields#v0.3.0` or a `git+https://github.com/…`
+`github:RoniEstein/headless-fields#v0.4.0` or a `git+https://github.com/…`
 URL: Bun resolves both through `GITHUB_API_URL`, which Forgejo and Gitea
 Actions point at their own forge, so installs in those CI runners fail.
 
@@ -214,6 +214,184 @@ a project can skin its ordinary inputs with the same frame. Explicit
 
 `validateOnSubmit` blocks native submission while the field has an issue,
 with the issue as the browser's message.
+
+## File fields
+
+Three layers, same as the text fields:
+
+| Layer | What it is | Use it to |
+|---|---|---|
+| Behaviour | `files()` definition + `useFileField` | Own all the markup: state, actions and prop getters carry the accessibility |
+| Templates | `FilePickerField`, `FileDropField` | Get the two common patterns in one line; override rows or copy them |
+| Skins | slot classes and icons from `FieldSkinProvider` | Style parts and templates, scoped per page or section |
+
+Parts (`FileTrigger`, `FileDropArea`, `FileList`, …) sit in between: one
+element each, bound to the behaviour through context, with a `render` prop to
+use your own element or component.
+
+The native `<input type="file">` is always the real control: visually hidden
+but focusable and labelled, inside the trigger `<label>`. It works before
+hydration, keeps native `required`, and Space/Enter open the picker. A drop
+area is a plain region (no role, no tab stop), so there are no nested
+controls; the trigger is the keyboard path. Transport is not included: post
+the `File[]` value with your form (Inertia sends it as multipart).
+
+### Definition (portable)
+
+```ts
+import { files, MB } from 'headless-fields/core';
+
+export const artwork = files({
+    accept: ['image/*', '.pdf', '.md', 'text/markdown'], // MIME, wildcards, extensions
+    maxSize: 10 * MB,
+    maxFiles: 5,              // default 1: a single file that a new pick replaces
+    rejectDuplicates: true,   // default
+    requiredMessage: 'Add your artwork or directions',
+    messages: { tooLarge: (f, max) => `${f.name} is over ${max / MB} MB` }, // optional
+    rules: [(f) => (f.name.startsWith('~$') ? { code: 'temp', message: 'Close the file first' } : null)],
+});
+// Rejection codes: type | too-large | too-small | too-many | duplicate | your own.
+```
+
+Browsers often report Markdown files with no MIME type, so list `.md` as an
+extension, not only `text/markdown`.
+
+### Templates
+
+```tsx
+import { FileDropField, FilePickerField } from 'headless-fields/dom';
+
+// Click to select: trigger + "No files chosen" / "brief.pdf" / "3 files chosen", then the list.
+<FilePickerField definition={artwork} label="Directions" value={files} onChange={setFiles}
+                 required serverError={errors.directions} />
+
+// Drop area: trigger + "or drop files here" inside a drop region, then the list.
+<FileDropField definition={artwork} label="Artwork or directions" value={files} onChange={setFiles}
+               hint="PNG, JPG, PDF or Markdown, up to 10 MB"
+               renderItem={(entry) => <MyFileRow entry={entry} />} />
+```
+
+Template props: everything `FileField` takes (`definition`, `value`,
+`onChange`, `required`, `disabled`, `serverError`, `hint`, `name`, `id`,
+`strings`, `classNames`, `className`) plus `label`, `triggerLabel`,
+`renderItem`, `children`, and `dropHint` on `FileDropField`.
+
+### Parts
+
+```tsx
+import { FieldLabel, FieldMessage, FileAnnouncer, FileDropArea, FileField, FileItem, FileList,
+         FileName, FilePreview, FileRejections, FileRemove, FileSize, FileTrigger } from 'headless-fields/dom';
+
+<FileField definition={artwork} value={files} onChange={setFiles} required>
+    <FieldLabel>Artwork</FieldLabel>
+    <FileDropArea>
+        <FileTrigger render={(props) => <label {...props} className={buttonClasses} />}>Browse</FileTrigger>
+    </FileDropArea>
+    <FileList>
+        {(entry) => (
+            <FileItem entry={entry}>
+                <FilePreview /> <FileName /> <FileSize />
+                <FileRemove render={<IconButton />} />
+            </FileItem>
+        )}
+    </FileList>
+    <FileRejections />
+    <FieldMessage />
+    <FileAnnouncer />
+</FileField>
+```
+
+`render` takes an element (cloned with the part's props; handlers and
+classes combine, refs both receive the node) or a function `(props, state)`
+that must spread `props` onto a DOM element. `FileTrigger` must render a
+`<label>`: it wraps the input. For your own `<button>`, call `open()` from
+`useFileFieldContext()` (that path needs JavaScript).
+
+### Behaviour only: your markup
+
+```tsx
+import { useFileField } from 'headless-fields/dom';
+
+const f = useFileField(artwork, { value, onChange: setValue, required, serverError });
+
+<div {...f.getRootProps({ className: 'uploader' })}>
+    <span {...f.getLabelProps()}>Artwork</span>
+    <div {...f.getDropProps({ className: 'canvas' })}>
+        <label {...f.getTriggerProps({ className: 'btn' })}>
+            <input {...f.getInputProps()} /> Browse files
+        </label>
+    </div>
+    <ul>
+        {f.entries.map((e) => (
+            <li key={e.id} {...f.getItemProps(e)}>
+                {e.kind === 'image' && <img src={f.previewUrl(e)} alt="" />}
+                {e.name}, {formatBytes(e.size)}
+                <button {...f.getRemoveProps(e)}>×</button>
+            </li>
+        ))}
+    </ul>
+    {f.rejections.map((r) => <p key={r.file.name} {...f.getRejectionProps(r)}>{r.message}</p>)}
+    <p {...f.getMessageProps()}>{f.view.message}</p>
+    <div {...f.getAnnouncerProps()}>{f.announcement}</div>
+</div>
+```
+
+| Getter | Gives |
+|---|---|
+| `getInputProps` | `type=file`, id, `accept`, `multiple`, `required`, `aria-labelledby` (label + trigger), `aria-describedby`, visually hidden style, change/blur handling |
+| `getTriggerProps` | id and `htmlFor` for the wrapping `<label>` |
+| `getLabelProps` | id and `htmlFor` for the field label |
+| `getDropProps` | drag enter/over/leave/drop handlers; no role or tab stop |
+| `getItemProps(entry)` | `data-kind`, `data-file-id` |
+| `getRemoveProps(entry)` | `type=button`, "Remove name" label, removal with focus moving to the next file or the input |
+| `getRejectionProps(r)` | `data-error-code` |
+| `getMessageProps` / `getAnnouncerProps` | message id and tone; a polite, visually hidden live region |
+
+Every getter takes your props and merges them: your handlers run first, and
+`event.preventDefault()` skips ours. Skip a getter and you skip what it
+provides. State: `entries`, `rejections`, `announcement`, `summary`, `view`,
+`dragging`, `dragReject`, `maxReached`. Actions: `add`, `remove`, `clear`,
+`open`, `touch`. `previewUrl(entry)` gives revoked-on-removal object URLs for
+images.
+
+### Skin slots and state
+
+Slots: `trigger`, `dropArea`, `dropHint`, `fileSummary`, `fileList`,
+`fileItem`, `filePreview`, `fileName`, `fileSize`, `fileRemove`,
+`fileRejections`, `fileRejection`, plus the shared `label` and `message`.
+Icons: `upload` (in triggers), `remove`, `file` (rows without an image).
+
+State attributes on every file part: `data-state`, `data-disabled`,
+`data-required`, `data-has-files`, `data-max-reached`, `data-dragging`,
+`data-drag-reject`. Rows add `data-kind="image|pdf|text|other"`; rejections
+add `data-error-code`.
+
+```ts
+const skin: FieldSkin = {
+    merge: cn,
+    classNames: {
+        dropArea: 'rounded-xl border-2 border-dashed p-6 data-dragging:border-accent data-drag-reject:border-red-400',
+        trigger: 'inline-flex cursor-pointer rounded-lg border px-4 py-2 has-[:focus-visible]:ring-2',
+        fileItem: 'flex items-center gap-3 rounded-lg border px-3 py-2',
+        filePreview: 'size-10 rounded object-cover',
+        fileRemove: 'ml-auto rounded p-1',
+        fileRejection: 'text-sm text-red-600',
+    },
+    icons: { upload: <Upload aria-hidden />, remove: <X aria-hidden />, file: <FileText aria-hidden /> },
+};
+```
+
+### Other platforms
+
+`useFileSelection` in `headless-fields/react` is the same behaviour without
+the DOM: give it a `describe(handle)` for your platform's file handle. A
+React Native picker adapter (Expo) is NOT YET IMPLEMENTED.
+
+### Browser checks
+
+`bun run test:browser` bundles a harness and drives it in a real browser
+(`BROWSER=chromium|firefox|webkit`): keyboard picker, focus styling, real
+drops, native validity, previews and removal focus.
 
 ## Develop
 
