@@ -1,6 +1,6 @@
 {
     "name": "@tache/fields",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Headless form fields: a DOM-free core (masks, rules, feedback policy, field definitions), React hooks for any renderer, and unstyled DOM parts themed by skins.",
     "type": "module",
     "sideEffects": false,

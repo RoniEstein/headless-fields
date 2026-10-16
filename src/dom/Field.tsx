@@ -32,7 +32,8 @@ export interface FieldProps<V> extends FieldOptions<V> {
     rows?: number;
     /** Anything else for the native element (autoFocus, data-*, aria-*). */
     inputProps?: Omit<FieldInputProps, 'ref'> | Omit<FieldTextareaProps, 'ref'>;
-    inputRef?: Ref<HTMLInputElement & HTMLTextAreaElement>;
+    inputRef?: Ref<HTMLInputElement>;
+    textareaRef?: Ref<HTMLTextAreaElement>;
 }
 
 /**
@@ -55,10 +56,17 @@ export function Field<V>({
     rows,
     inputProps,
     inputRef,
+    textareaRef,
     ...options
 }: FieldProps<V>) {
     const field = useField(definition, options);
-    const shared = { name, placeholder, validateOnSubmit, ref: inputRef };
+    // Only set what was given, so the definition's defaults (name="tel")
+    // survive an omitted prop.
+    const shared = {
+        ...(name !== undefined && { name }),
+        ...(placeholder !== undefined && { placeholder }),
+        validateOnSubmit,
+    };
 
     return (
         <FieldRoot
@@ -76,10 +84,15 @@ export function Field<V>({
                     <FieldTextarea
                         {...(inputProps as Omit<FieldTextareaProps, 'ref'>)}
                         {...shared}
+                        ref={textareaRef}
                         rows={rows}
                     />
                 ) : (
-                    <FieldInput {...(inputProps as Omit<FieldInputProps, 'ref'>)} {...shared} />
+                    <FieldInput
+                        {...(inputProps as Omit<FieldInputProps, 'ref'>)}
+                        {...shared}
+                        ref={inputRef}
+                    />
                 )}
                 <FieldIndicator />
                 {end !== undefined && <FieldAdornment side="end">{end}</FieldAdornment>}

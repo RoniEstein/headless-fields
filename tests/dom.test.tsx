@@ -87,6 +87,19 @@ describe('Field', () => {
         expect(screen.getByText('+1').getAttribute('data-side')).toBe('start');
     });
 
+    test('keeps the definition input hints unless overridden', () => {
+        render(<Field definition={phone} value="" onChange={() => {}} />);
+        const input = screen.getByLabelText(/Phone/) as HTMLInputElement;
+        expect(input.name).toBe('tel');
+        expect(input.getAttribute('autocomplete')).toBe('tel');
+        expect(input.getAttribute('inputmode')).toBe('numeric');
+        expect(input.placeholder).toBe('(555) 123 - 4567');
+        cleanup();
+        render(<Field definition={phone} value="" onChange={() => {}} name="mobile" placeholder="Cell" />);
+        const custom = screen.getByLabelText(/Phone/) as HTMLInputElement;
+        expect([custom.name, custom.placeholder]).toEqual(['mobile', 'Cell']);
+    });
+
     test('validateOnSubmit puts the issue in the native validity message', () => {
         render(<Field definition={phone} value="" onChange={() => {}} validateOnSubmit />);
         const input = screen.getByLabelText(/Phone/) as HTMLInputElement;

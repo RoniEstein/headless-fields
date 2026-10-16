@@ -21,7 +21,7 @@ everything above it. It is NOT YET IMPLEMENTED.
 A git dependency pinned to a tag:
 
 ```bash
-bun add git+ssh://git@git.jerkfactory.com/roni/fields.git#v0.1.0
+bun add git+ssh://git@git.jerkfactory.com/roni/fields.git#v0.2.0
 ```
 
 The package ships TypeScript source. Bundlers compile it like your own code.
