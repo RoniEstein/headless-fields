@@ -7,7 +7,8 @@ project, the page, or the section a field sits in.
 headless-fields/core         DOM-free TypeScript. Masks, rules, the feedback policy,
                              field state as a pure reducer, file rules. Runs anywhere.
 headless-fields/definitions  Field definitions built from the core: phone, postal code,
-                             email, number, date, birthdate, health number by province.
+                             email, number, date, birthdate, time of day, health number
+                             by province.
 headless-fields/react        useField and useFileSelection: behaviour as hooks. No DOM,
                              so they work for React DOM and React Native.
 headless-fields/dom          Unstyled parts, the composed <Field>, file fields, and skins.
@@ -21,11 +22,11 @@ everything above it. It is NOT YET IMPLEMENTED.
 Install the release tarball for a tag:
 
 ```bash
-bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.4.0
+bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.5.0
 ```
 
 The lockfile pins the tarball's integrity hash. Prefer this over
-`github:RoniEstein/headless-fields#v0.4.0` or a `git+https://github.com/…`
+`github:RoniEstein/headless-fields#v0.5.0` or a `git+https://github.com/…`
 URL: Bun resolves both through `GITHUB_API_URL`, which Forgejo and Gitea
 Actions point at their own forge, so installs in those CI runners fail.
 
@@ -96,7 +97,12 @@ A mask is four small functions: `accept` (typed text → raw), `format`
 returns `{ message, timing: 'immediate' | 'blur' }` or `null`.
 
 Definitions that depend on options are factories: `number({ min: 1, max: 99,
-integer: true })`, `date({ maxDate })`, `healthNumber('MB')`.
+integer: true })`, `date({ maxDate })`, `time({ minTime, maxTime, stepMinutes })`,
+`healthNumber('MB')`.
+
+`time()` gives the form 24-hour `HH:MM` (a database `09:00:00` loads as
+`09:00`). It also accepts `930p` or an autofilled `9:30 PM`, and reads the
+answer back on a 12-hour clock ("9:30 p.m.") so `21:30` is never misread.
 
 ## Sizing
 

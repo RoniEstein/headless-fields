@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState, type ChangeEvent } from 'react';
-import { healthNumber, phone, type Province } from '../src/definitions';
+import { healthNumber, phone, time, type Province } from '../src/definitions';
 import {
     Field,
     FieldControl,
@@ -218,5 +218,39 @@ describe('native mode', () => {
             </FieldRoot>,
         );
         expect((screen.getByLabelText('pw') as HTMLInputElement).value).toBe('abc');
+    });
+});
+
+describe('time field', () => {
+    function TimeField({ initial, onValue }: { initial: string; onValue: (v: string) => void }) {
+        const [value, setValue] = useState(initial);
+        return (
+            <Field
+                definition={time()}
+                label="Starts"
+                value={value}
+                onChange={(v) => {
+                    setValue(v);
+                    onValue(v);
+                }}
+            />
+        );
+    }
+
+    test('a database time with seconds is normalised to HH:MM', () => {
+        const emitted: string[] = [];
+        render(<TimeField initial="09:00:00" onValue={(v) => emitted.push(v)} />);
+        expect((screen.getByLabelText(/Starts/) as HTMLInputElement).value).toBe('09:00');
+        expect(emitted).toEqual(['09:00']);
+    });
+
+    test('a 12-hour answer is stored as 24-hour and read back', () => {
+        const emitted: string[] = [];
+        render(<TimeField initial="" onValue={(v) => emitted.push(v)} />);
+        const input = screen.getByLabelText(/Starts/) as HTMLInputElement;
+        fireEvent.change(input, { target: { value: '930p' } });
+        expect(input.value).toBe('21:30');
+        expect(emitted).toEqual(['21:30']);
+        expect(screen.getByText('9:30 p.m.')).toBeTruthy();
     });
 });

@@ -12,5 +12,13 @@ export {
     monthDayYearMask,
 } from './date';
 export type { DateBounds, DateOptions } from './date';
+export {
+    describeTime,
+    hourMinuteCodec,
+    time,
+    timeRule,
+    twentyFourHourMask,
+} from './time';
+export type { TimeOptions } from './time';
 export { HEALTH_CARD_FORMATS, healthNumber } from './health-number';
 export type { HealthCardFormat, Province } from './health-number';

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { evaluate, resolveFeedback, type FieldDefinition } from '../src/core';
-import { birthdate, date, email, healthNumber, number, phone, postalCode } from '../src/definitions';
+import { birthdate, date, email, healthNumber, number, phone, postalCode, time } from '../src/definitions';
 
 const issue = <V>(definition: FieldDefinition<V>, raw: string) => evaluate(definition, raw, false).issue?.message ?? null;
 const accept = <V>(definition: FieldDefinition<V>, text: string) => definition.mask.accept(text);
@@ -86,6 +86,43 @@ describe('dates', () => {
         const bounded = date({ minDate: '2026-01-01', maxDate: '2026-12-31' });
         expect(issue(bounded, '12312025')).toBe('Year must be 2026 or later');
         expect(issue(date(), `0101${thisYear + 1}`)).toBe(`Year must be ${thisYear} or earlier`);
+    });
+});
+
+describe('time', () => {
+    const t = time();
+    test('formats 24-hour digits and pads a lone hour', () => {
+        expect(display(t, '0930')).toBe('09:30');
+        expect(accept(t, '9')).toBe('09');
+        expect(accept(t, '930')).toBe('0930');
+        expect(t.codec.toValue('2130')).toBe('21:30');
+        expect(t.codec.fromValue('09:30:00')).toBe('0930');
+    });
+    test('drops digits that cannot belong at their position', () => {
+        expect(accept(t, '24')).toBe('2');
+        expect(accept(t, '1260')).toBe('120');
+    });
+    test('converts 12-hour answers with a or p', () => {
+        expect(accept(t, '930p')).toBe('2130');
+        expect(accept(t, '9 pm')).toBe('2100');
+        expect(accept(t, '09:30p')).toBe('2130');
+        expect(accept(t, '12a')).toBe('0000');
+        expect(accept(t, '12:30:00 PM')).toBe('1230');
+    });
+    test('reads the answer back on a 12-hour clock', () => {
+        const result = resolveFeedback(t, { raw: '2130', touched: false, required: false });
+        expect(result.message).toBe('9:30 p.m.');
+        expect(resolveFeedback(t, { raw: '0005', touched: false, required: false }).message).toBe('12:05 a.m.');
+    });
+    test('a partial time waits for blur', () => {
+        expect(evaluate(t, '09', false).issue).toEqual({ message: 'Format: HH:MM', timing: 'blur' });
+    });
+    test('checks bounds and steps', () => {
+        const bounded = time({ minTime: '07:00', maxTime: '21:00', stepMinutes: 5 });
+        expect(issue(bounded, '0630')).toBe('Must be 7:00 a.m. or later');
+        expect(issue(bounded, '2130')).toBe('Must be 9:00 p.m. or earlier');
+        expect(issue(bounded, '0907')).toBe('Use 5-minute steps');
+        expect(issue(bounded, '0910')).toBeNull();
     });
 });
 
