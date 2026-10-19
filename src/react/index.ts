@@ -9,3 +9,5 @@ export type {
     FileSelectionOptions,
     FileStrings,
 } from './useFileSelection';
+export { useChoice } from './useChoice';
+export type { Choice, ChoiceOptions } from './useChoice';
