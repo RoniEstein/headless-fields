@@ -22,7 +22,18 @@ export type FieldSlot =
     | 'fileSize'
     | 'fileRemove'
     | 'fileRejections'
-    | 'fileRejection';
+    | 'fileRejection'
+    // Radio groups: plain options, and cards for options with detail
+    | 'radioOptions'
+    | 'radio'
+    | 'radioInput'
+    | 'radioLabel'
+    | 'radioDescription'
+    | 'radioCards'
+    | 'radioCard'
+    | 'radioCardInput'
+    | 'radioCardLabel'
+    | 'radioCardDescription';
 
 /** Icons a skin can supply. Text fields use valid/invalid; file fields use
  *  upload (in triggers), remove (in remove buttons) and file (rows without

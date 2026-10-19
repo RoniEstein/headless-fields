@@ -52,3 +52,26 @@ export { FileDropField, FilePickerField } from './files/templates';
 export type { FileDropFieldProps, FileTemplateProps } from './files/templates';
 export { mergeProps, visuallyHidden } from './files/props';
 export type { ElementProps, RenderProp } from './files/props';
+
+// Radio groups: behaviour (useRadioGroup), parts, and two starter templates.
+export { useRadioGroup } from './radio/useRadioGroup';
+export type {
+    RadioGroup as RadioGroupState,
+    RadioGroupIds,
+    RadioGroupOptions,
+    RadioOptionRef,
+} from './radio/useRadioGroup';
+export {
+    Radio,
+    RadioCard,
+    RadioCards,
+    RadioDescription,
+    RadioGroup,
+    RadioGroupLabel,
+    RadioLabel,
+    RadioOptions,
+    useRadioGroupContext,
+} from './radio/parts';
+export type { RadioGroupProps, RadioItemProps, RadioPartState } from './radio/parts';
+export { RadioCardsField, RadioGroupField } from './radio/templates';
+export type { RadioCardsFieldProps, RadioChoice, RadioTemplateProps } from './radio/templates';
