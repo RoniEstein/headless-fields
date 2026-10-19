@@ -130,6 +130,37 @@ check('open() from a custom button opens a single-file picker', !own.isMultiple(
 await own.setFiles([{ name: 'poster.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF') }]);
 check('custom field announces', (await page.locator('[role=status]').last().textContent()) === 'Added poster.pdf.');
 
+// 6. Plain radios: the browser's own keyboard, required feedback, form data.
+await page.focus('#radio-before');
+await page.keyboard.press('Tab');
+check('Tab lands on the first radio', (await page.evaluate(() => document.activeElement?.getAttribute('value'))) === 'yes');
+await page.keyboard.press('Tab');
+await page.locator('text=Choose an option').waitFor();
+check('leaving a required group unanswered shows the message', true);
+// Where Shift+Tab lands in an unanswered group differs by browser; start from the first radio.
+await page.focus('#decider-yes');
+await page.keyboard.press('ArrowDown');
+const decided = await page.evaluate(() => ({
+    focus: document.activeElement?.getAttribute('value'),
+    data: new FormData(document.getElementById('form')).get('decider'),
+}));
+check('arrow keys move and choose', decided.focus === 'no' && decided.data === 'no', JSON.stringify(decided));
+check('choosing clears the required message', (await page.locator('text=Choose an option').count()) === 0);
+check('the chosen option carries data-checked', await page.locator('#decider-no').evaluate((el) => el.parentElement.hasAttribute('data-checked')));
+
+// 7. Cards: a real click anywhere on the card chooses it; a link keeps its click.
+await page.getByText('Five sites').click();
+const card = await page.evaluate(() => ({
+    checked: document.getElementById('plan-pro').checked,
+    focus: document.activeElement?.id,
+}));
+check('clicking card content chooses it and focuses its radio', card.checked && card.focus === 'plan-pro', JSON.stringify(card));
+await page.getByText('One site').click();
+await page.locator('#terms').click();
+check('a link inside a card does not choose it', await page.evaluate(() => document.getElementById('plan-regular').checked && location.hash === '#terms'));
+const cardName = await page.locator('#plan-pro').evaluate((el) => [el.labels[0]?.textContent, el.getAttribute('aria-describedby')]);
+check('a card radio is named by its title only', cardName[0] === 'Pro' && !!cardName[1], JSON.stringify(cardName));
+
 check('no page errors', errors.length === 0, errors.join(' | '));
 await browser.close();
 server.close();
