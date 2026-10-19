@@ -22,11 +22,11 @@ everything above it. It is NOT YET IMPLEMENTED.
 Install the release tarball for a tag:
 
 ```bash
-bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.5.0
+bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.6.0
 ```
 
 The lockfile pins the tarball's integrity hash. Prefer this over
-`github:RoniEstein/headless-fields#v0.5.0` or a `git+https://github.com/…`
+`github:RoniEstein/headless-fields#v0.6.0` or a `git+https://github.com/…`
 URL: Bun resolves both through `GITHUB_API_URL`, which Forgejo and Gitea
 Actions point at their own forge, so installs in those CI runners fail.
 
@@ -209,8 +209,8 @@ const field = useField(phone, { value, onChange });
 </FieldRoot>
 ```
 
-Controls whose behaviour lives elsewhere (a Radix checkbox, radio group or
-select) reuse the frame with `staticField({ error, hint, required })` in
+Controls whose behaviour lives elsewhere (a Radix checkbox or select)
+reuse the frame with `staticField({ error, hint, required })` in
 place of `useField`.
 
 Inside a `staticField` frame, `<FieldInput>` and `<FieldTextarea>` behave
@@ -397,7 +397,112 @@ React Native picker adapter (Expo) is NOT YET IMPLEMENTED.
 
 `bun run test:browser` bundles a harness and drives it in a real browser
 (`BROWSER=chromium|firefox|webkit`): keyboard picker, focus styling, real
-drops, native validity, previews and removal focus.
+drops, native validity, previews and removal focus, plus radio groups:
+arrow keys, required feedback, form data and card clicks.
+
+## Radio groups
+
+Native `<input type="radio">` underneath, so the browser supplies the
+keyboard (Tab into the group, arrows between options), form submission and
+`required`. Two starter compositions cover the two kinds of question:
+
+| | For | Each option |
+|---|---|---|
+| `RadioGroupField` | Plain answers: Yes / No, M / F / X | a radio and a short label |
+| `RadioCardsField` | Options with detail: plans, delivery methods | a card: radio, title, any markup |
+
+They differ in markup and slots, not just classes: a plain option is named by
+its label and only the radio and label choose it; a card is named by its
+title, described by its content (a `<div>`, so lists, prices and badges are
+valid), and a click anywhere on it chooses it (links and buttons inside keep
+their own clicks).
+
+```tsx
+import { RadioCardsField, RadioGroupField } from 'headless-fields/dom';
+
+<RadioGroupField label="Are you the person who decides on this?" required
+    options={[{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }]}
+    value={data.decider} onChange={(v) => setData('decider', v)}
+    serverError={errors.decider} />
+
+<RadioCardsField label="Plan" value={data.plan} onChange={(v) => setData('plan', v)}
+    options={[
+        { value: 'regular', label: 'Regular', description: <ul><li>One site</li></ul> },
+        { value: 'pro', label: 'Pro', description: <Features plan="pro" /> },
+    ]} />
+```
+
+The value is a string, `''` while nothing is chosen. Options: `required`,
+`requiredMessage` (default "Choose an option", shown once focus leaves the
+group unanswered), `serverError` (always shown), `hint`, `disabled`, `name`
+(the form name; generated when omitted), `id`, `showValidIndicator`. Option
+`disabled` disables one option. `RadioCardsField` also takes
+`renderOption(option, { checked })` for your own card content.
+
+### Parts
+
+```tsx
+<RadioGroup value={plan} onChange={setPlan} name="plan">
+    <RadioGroupLabel>Plan</RadioGroupLabel>
+    <RadioCards render={<section />}>
+        <RadioCard value="pro" render={(props, { checked }) => <article {...props} />}>
+            <RadioLabel>Pro</RadioLabel>
+            <RadioDescription><Price /> <FeatureList /></RadioDescription>
+        </RadioCard>
+    </RadioCards>
+    <FieldMessage />
+</RadioGroup>
+```
+
+`RadioOptions` / `RadioCards` are the `role="radiogroup"` element, labelled
+by `RadioGroupLabel` (a `<span>`, since it names a group, not one input).
+`Radio` / `RadioCard` render the native radio first, then their children.
+`RadioLabel` is the option's `<label>`; `RadioDescription` is linked to the
+radio with `aria-describedby`. Every part takes `className` and `render`.
+
+### Behaviour only: your markup
+
+```tsx
+const g = useRadioGroup({ value, onChange, required });
+
+<fieldset {...g.getGroupProps()}>
+    <legend {...g.getLabelProps()}>Size</legend>
+    {sizes.map((s) => (
+        <div key={s.value} {...g.getCardProps(s)}>   {/* or getItemProps: no click-anywhere */}
+            <input {...g.getInputProps(s)} />
+            <label {...g.getOptionLabelProps(s)}>{s.name}</label>
+            <div {...g.getDescriptionProps(s)}>{s.details}</div>
+        </div>
+    ))}
+    {g.view.message && <p {...g.getMessageProps()}>{g.view.message}</p>}
+</fieldset>
+```
+
+Getters take an option `{ value, disabled? }` and your own props to merge
+(your handlers run first; `preventDefault()` skips ours). `useChoice` in
+`headless-fields/react` is the same behaviour without the DOM, for React
+Native or a custom control.
+
+### Skin slots and state
+
+Plain: `radioOptions`, `radio`, `radioInput`, `radioLabel`,
+`radioDescription`. Cards: `radioCards`, `radioCard`, `radioCardInput`,
+`radioCardLabel`, `radioCardDescription`. Plus the shared `label`,
+`requiredMark` and `message`. Every part carries `data-state`, `data-tone`,
+`data-touched`, `data-required`; options add `data-checked` and
+`data-disabled`. Style focus with `has-[:focus-visible]`.
+
+```ts
+classNames: {
+    radioOptions: 'flex flex-col gap-2',
+    radio: 'flex items-center gap-2',
+    radioInput: 'size-4 accent-[var(--accent)]',
+    radioCards: 'grid gap-3 sm:grid-cols-3',
+    radioCard: 'relative cursor-pointer rounded-xl border p-4 data-checked:border-accent has-[:focus-visible]:ring-2',
+    radioCardLabel: 'font-semibold',
+    radioCardDescription: 'mt-2 text-sm',
+}
+```
 
 ## Develop
 
