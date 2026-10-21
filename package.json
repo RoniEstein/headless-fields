@@ -31,7 +31,8 @@
     },
     "files": [
         "src",
-        "README.md"
+        "README.md",
+        "SKINNING.md"
     ],
     "scripts": {
         "test": "bun test",

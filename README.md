@@ -12,7 +12,13 @@ headless-fields/definitions  Field definitions built from the core: phone, posta
 headless-fields/react        useField and useFileSelection: behaviour as hooks. No DOM,
                              so they work for React DOM and React Native.
 headless-fields/dom          Unstyled parts, the composed <Field>, file fields, and skins.
+headless-fields/default.css  An optional default look for fields with no skin.
 ```
+
+headless-fields owns behaviour: what a field knows (the answer, what is
+wrong, the help text, filled, focused) and the ARIA that goes with it. It
+stamps that state on the markup as `data-*` attributes. How a field looks,
+and where its parts sit, belongs to the skin.
 
 A React Native renderer (`/native`) would sit beside `/dom` and reuse
 everything above it. It is NOT YET IMPLEMENTED.
@@ -29,6 +35,54 @@ The lockfile pins the tarball's integrity hash. Prefer this over
 `github:RoniEstein/headless-fields#v0.6.0` or a `git+https://github.com/…`
 URL: Bun resolves both through `GITHUB_API_URL`, which Forgejo and Gitea
 Actions point at their own forge, so installs in those CI runners fail.
+
+Then pick one of two setups.
+
+### Styled: the default look
+
+Import the stylesheet once (app entry or root CSS) and use fields with no
+provider:
+
+```ts
+import 'headless-fields/default.css';
+```
+
+It styles only fields whose root has `data-skin="default"`, which is every
+field with no `FieldSkinProvider` above it (or a provider that `extend`s the
+default). It sits in `@layer headless-fields` with zero-specificity
+selectors, so your own CSS always wins. Theme it with custom properties on
+`:root` or any ancestor:
+
+```css
+:root {
+    --hf-accent: #8e817c;      /* focus border, checked cards */
+    --hf-text: #111b23;        /* answers */
+    --hf-muted: #46484b;       /* hints, information */
+    --hf-placeholder: #6b7280; /* keep it at 4.5:1 on the field background */
+    --hf-border: #c2bab5;
+    --hf-error: #a05252;
+    --hf-radius: 0.5rem;
+}
+```
+
+With Tailwind v4 or other layered CSS, declare the layer first so your
+layers come after it: `@layer headless-fields, theme, base, components, utilities;`.
+
+### Headless: your own skin
+
+Don't import the stylesheet. Provide a skin (class strings per slot, plus
+icons) at the app root, in both the client and SSR entries:
+
+```tsx
+<FieldSkinProvider skin={projectSkin}>{app}</FieldSkinProvider>
+```
+
+A skin without a `name` turns the default look off for its fields, so the
+two setups can share a page. **AI agents writing a skin: follow
+[SKINNING.md](SKINNING.md)**, a step-by-step guide with the full slot and
+state reference and a verification checklist.
+
+### Build notes
 
 The package ships TypeScript source. Bundlers compile it like your own code.
 For Vite SSR, keep it bundled so Node never loads `.ts` at runtime:
@@ -168,7 +222,9 @@ comes from data attributes on every part, so a skin needs no logic:
 | `data-sized`, `data-has-start`, `data-has-end`, `data-reserve-indicator` | present or absent |
 
 Slots: `root`, `label`, `requiredMark`, `hint`, `control`, `input`,
-`adornment` (with `data-side="start|end"`), `indicator`, `message`.
+`adornment` (with `data-side="start|end"`), `indicator`, `message`. Each part
+also carries `data-slot` with its slot name, and the root carries `data-skin`
+with the skin's `name`.
 
 The templates render the hint right after the label. Where it shows is the
 skin's call: make the root `flex flex-col` and give `hint` an `order` to
