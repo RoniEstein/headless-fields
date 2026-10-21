@@ -91,6 +91,205 @@ Variations are layers, not copies:
 `extend` merges slot by slot over the inherited skin. The nearest provider
 wins; `classNames` on one field merges last.
 
+## Worked example: a health number, start to finish
+
+A provincial health number shows most of the choices a field involves. The
+same steps apply to a date or a postal code.
+
+### 1. Pick the definition; don't rebuild the behaviour
+
+```tsx
+import { healthNumber, type Province } from 'headless-fields/definitions';
+
+const definition = healthNumber(province); // 'MB' → PHIN, 'ON' → Health Card Number, ...
+```
+
+The definition already owns the format: digits only for Manitoba, grouped
+`123 456 789`; ten digits plus a two-letter version code for Ontario; the
+label, the placeholder, the "PHIN must be 9 digits" guidance and the typing
+width. `healthNumber()` caches one definition per province, so the field can
+tell "the province changed" from "the page re-rendered". Never build a
+definition inside render (`date()` in JSX makes a new one every render and
+the field resets): call factories once, at module level or in `useMemo`.
+
+### 2. Decide what each piece of text does
+
+| Text | Choice for this field | Why |
+|---|---|---|
+| Label | from the definition ("PHIN", "Health Card Number") | it changes with the province, for free |
+| Placeholder | the format (`000 000 000`) | a format can't be mistaken for an answer as long as the skin keeps placeholders clearly lighter than answers |
+| Hint | "On the front of your health card" | stays visible while they type; say where to find it, not what it looks like |
+| Message | the definition's guidance, then errors | "PHIN must be 9 digits" is information while typing and becomes an error once they leave the field |
+| Server error | `errors.health_number` from the backend | always wins |
+
+Province-dependent help needs no function. Pass a different string and the
+field re-renders:
+
+```tsx
+hint={province === 'ON' ? 'Include the two letters after the number' : 'On the front of your health card'}
+```
+
+Use a function hint only when the help depends on what is typed in this
+field (`hint={(raw) => ...}` receives the text typed so far).
+
+### 3. Wrap it once as a project field
+
+```tsx
+export function HealthNumberInput({ province, ...props }: HealthNumberInputProps) {
+    return <Field definition={healthNumber(province)} {...props} />;
+}
+
+<HealthNumberInput
+    province={province}
+    value={form.data.health_number}
+    onChange={(v) => form.setData('health_number', v)}
+    required
+    hint="On the front of your health card"
+    serverError={form.errors.health_number}
+/>
+```
+
+The form receives the formatted text (`123 456 789`), so it posts what the
+user saw. Switching the province re-reads the stored value in the new
+format.
+
+### 4. Let the width say how long the answer is
+
+The definition sizes the field from the placeholder: 11 characters for
+Manitoba, 15 for Ontario. A skin that honours `data-sized` turns that into
+a width (see the width section below), so a PHIN box is visibly short and grows when
+the province switches to Ontario. Don't put it in half of a two-column grid:
+the grid would pick the width, not the answer. Override with `chars` only
+when your format really is longer than the definition's.
+
+## Same field, two looks: two providers
+
+Nothing about the health number changes between these looks. Only the
+provider does.
+
+### The project theme (labels above the box)
+
+This is the shape of the Tache skin: semantic colour classes, a quiet hint
+under the label, the message under the box, an answer in the heading colour
+and a placeholder clearly lighter.
+
+```tsx
+export const tacheFieldSkin: FieldSkin = {
+    merge: cn,
+    classNames: {
+        label: 'mb-1.5 block text-sm font-medium text-body',
+        hint: 'mb-1.5 text-sm text-body-muted',
+        control: 'relative',
+        input: cn(
+            'w-full rounded-lg border border-default bg-white px-4 py-2.5 pr-10 text-sm text-heading',
+            'placeholder-stone-400 focus:border-accent focus:ring-2 focus:ring-accent-light focus:outline-none',
+            'data-[state=invalid]:border-red-300',
+        ),
+        indicator: 'pointer-events-none absolute top-1/2 right-3 -translate-y-1/2',
+        message: 'mt-1.5 text-sm font-medium data-[tone=error]:text-red-600 data-[tone=info]:text-accent',
+    },
+    icons: { valid: <CheckCircle className="size-5 text-accent" />, invalid: <XCircle className="size-5 text-red-500" /> },
+};
+```
+
+### A floating-label variant of the same theme
+
+Layer it over the theme with `extend`, so colours, borders and icons stay
+the theme's and only placement changes:
+
+```tsx
+export const floatingLabels: FieldSkin = {
+    classNames: {
+        root: 'relative flex flex-col',
+        label: cn(
+            'pointer-events-none absolute top-3 left-4 z-10 mb-0 text-sm text-body-muted transition-all',
+            'data-filled:top-1.5 data-filled:text-xs data-focused:top-1.5 data-focused:text-xs data-focused:text-accent',
+        ),
+        control: 'order-1',
+        input: 'pt-5 pb-1.5 placeholder-transparent focus:placeholder-stone-400',
+        hint: 'order-2 mt-1.5 mb-0',
+        message: 'order-3',
+    },
+};
+```
+
+```tsx
+<FieldSkinProvider skin={tacheFieldSkin}>
+    <HealthNumberInput province="MB" … />            {/* label above */}
+
+    <FieldSkinProvider skin={floatingLabels} extend>
+        <HealthNumberInput province="MB" … />        {/* same field, label inside */}
+    </FieldSkinProvider>
+</FieldSkinProvider>
+```
+
+Choices the floating variant forces:
+
+- **Write conflicting classes in the same form as the base skin.** `extend`
+  merges with the theme's `cn`; tailwind-merge only drops the theme's
+  `placeholder-stone-400` if the override is also a `placeholder-*` class.
+- **The placeholder hides until focus.** The label sits where the
+  placeholder would, so the format shows only while typing; the hint must
+  carry anything the user needs before they start.
+- **The hint and message move below the box** with `order`. All three
+  (`control`, `hint`, `message`) need an order, or the unordered one jumps
+  above the box.
+- **The label must fit inside the box.** "PHIN" fits an 11-character box;
+  "Personal Health Number" (British Columbia) does not. Shorten the label,
+  or give the floating skin a minimum width (`control: 'order-1 min-w-48'`).
+  Don't widen the field for its label in the label-above theme: there the
+  label can be longer than the box.
+
+## Width: size each field by its answer, on purpose
+
+A box's width tells people how long an answer is expected to be. A postal
+code in a full-width box looks like it wants an address. Width is a decision
+for each field, made from the answer, not from the grid.
+
+How the pieces divide the work:
+
+1. **The definition** knows the answer length in characters: 7 for a postal
+   code, 14 for a date (`MM / DD / YYYY`), 16 for a phone, the placeholder
+   length for a health number. Free text has none and stays full width.
+2. **The field** puts it on the root as `--field-chars` and sets
+   `data-sized`. `chars` on a field overrides it.
+3. **The skin** knows the padding and icons around the text (the chrome) and
+   adds them: width = `chars × 1ch + chrome`. For the theme above that is
+   `px-4` on the left, `pr-10` on the right for the ✓/✕, and a 1px border
+   on each side: `1rem + 2.5rem + 2px`.
+
+Keep sizing as its own layer, so a form opts in:
+
+```tsx
+export const intrinsicFieldWidths: FieldSkin = {
+    classNames: {
+        control: 'text-sm [--field-chrome:calc(3.5rem+2px)] data-sized:max-w-full data-sized:sm:w-[calc(var(--field-chars)*1ch+var(--field-chrome))]',
+    },
+};
+
+<FieldSkinProvider skin={intrinsicFieldWidths} extend>{form}</FieldSkinProvider>
+```
+
+Rules for using it well:
+
+- **Full width on phones, sized from `sm:` up.** A narrow screen has no room
+  to spare and the width hint matters less there.
+- **Change the chrome whenever padding changes.** If the skin adds an icon on
+  the left (`data-has-start`), it adds that padding to `--field-chrome` in the
+  same class string, or every sized field comes out short.
+- **Set the font size on the control too.** `1ch` is the width of "0" in the
+  element's own font, so the control must use the input's font size.
+- **Letters run wider than digits.** `ch` is exact for digits and a little
+  narrow for capitals; give a letters-heavy field (an Ontario version code,
+  a Quebec RAMQ) a couple of extra `chars`.
+- **Free text gets a cap, not a size.** Names `max-w-sm`, email
+  `max-w-md`, notes and addresses the full column. Use `chars` for free text
+  only when you know the answer's length (a room note of about 32).
+- **Fields share a row only when they are one thought** (city and postal
+  code, start and end time), never to fill space.
+- **If the label is wider than its field, shorten the label.** "Approximate
+  number of staff" over a 4-character box becomes "Staff count".
+
 ## Reference: slots
 
 | Slot | Element | Used by |
