@@ -1,6 +1,8 @@
 export { email, emailAddress } from './email';
 export { nanpAreaCode, nanpExchange, nanpMask, phone } from './phone';
 export { canadianPostalMask, postalCode } from './postal-code';
+export { longText } from './long-text';
+export type { LongTextOptions } from './long-text';
 export { number } from './number';
 export type { NumberOptions } from './number';
 export {

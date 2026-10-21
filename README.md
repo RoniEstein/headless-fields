@@ -106,7 +106,15 @@ returns `{ message, timing: 'immediate' | 'blur' }` or `null`.
 
 Definitions that depend on options are factories: `number({ min: 1, max: 99,
 integer: true })`, `date({ maxDate })`, `time({ minTime, maxTime, stepMinutes })`,
-`healthNumber('MB')`.
+`healthNumber('MB')`, `longText({ maxLength: 500 })`.
+
+`longText()` counts as the user types ("120 of 500 characters") and says how
+far over the limit an answer is ("20 characters too many") instead of
+cutting it off, so a pasted answer is never silently shortened. Render it
+with `multiline`.
+
+Separators finish a part: typing `4/` in a date is April (`04`) and moves on
+to the day; `1:` in a time is hour `01`.
 
 `time()` gives the form 24-hour `HH:MM` (a database `09:00:00` loads as
 `09:00`). It also accepts `930p` or an autofilled `9:30 PM`, and reads the

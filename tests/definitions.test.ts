@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { evaluate, resolveFeedback, type FieldDefinition } from '../src/core';
-import { birthdate, date, email, healthNumber, number, phone, postalCode, time } from '../src/definitions';
+import { birthdate, date, email, healthNumber, longText, number, phone, postalCode, time } from '../src/definitions';
 
 const issue = <V>(definition: FieldDefinition<V>, raw: string) => evaluate(definition, raw, false).issue?.message ?? null;
 const accept = <V>(definition: FieldDefinition<V>, text: string) => definition.mask.accept(text);
@@ -153,5 +153,19 @@ describe('health numbers', () => {
     });
     test('the same province gives the same definition', () => {
         expect(healthNumber('BC')).toBe(healthNumber('BC'));
+    });
+});
+
+describe('long text', () => {
+    const notes = longText({ maxLength: 10 });
+    const feedback = (raw: string) => resolveFeedback(notes, { raw, touched: false, required: false });
+    test('counts characters as the user types', () => {
+        expect(feedback('hello')).toMatchObject({ tone: 'info', message: '5 of 10 characters' });
+        expect(feedback('')).toMatchObject({ tone: null, message: '' });
+    });
+    test('keeps text past the limit and says how far over it is', () => {
+        expect(accept(notes, 'hello world!')).toBe('hello world!');
+        expect(feedback('hello world')).toMatchObject({ status: 'invalid', tone: 'error', message: '1 character too many' });
+        expect(issue(notes, 'hello world!')).toBe('2 characters too many');
     });
 });
