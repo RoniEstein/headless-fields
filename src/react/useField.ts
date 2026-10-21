@@ -11,14 +11,20 @@ import {
 import type { FieldDefinition } from '../core/types';
 import type { FieldView, Indicator } from './view';
 
+/** A field's help text, fixed or computed from the text typed so far. */
+export type Hint = string | ((raw: string) => string);
+
 export interface FieldOptions<V> {
     value: V;
     onChange: (value: V) => void;
     required?: boolean;
     /** An error from outside the field (a failed submit). Always shown. */
     serverError?: string;
-    /** Static helper text, shown when the field has nothing else to say. */
-    hint?: string;
+    /** Help that stays visible while the user answers ("For example,
+     *  Training room"). A function receives the text typed so far, for help
+     *  that follows the answer ("120 of 500 characters"). Errors never
+     *  replace it; they show in the message. */
+    hint?: Hint;
     /** Show the required message before the user has touched the field. */
     showRequiredHint?: boolean;
     /** Force the valid state, for checks that live in the page. */
@@ -95,7 +101,6 @@ export function useField<V>(
         touched: current.touched,
         required,
         serverError: options.serverError,
-        hint: options.hint,
         showRequiredHint: options.showRequiredHint,
     });
 
@@ -108,6 +113,7 @@ export function useField<V>(
         raw: current.raw,
         feedback,
         status,
+        hint: typeof options.hint === 'function' ? options.hint(current.raw) : (options.hint ?? ''),
         message: feedback.message,
         tone: feedback.tone,
         indicator,
@@ -117,6 +123,7 @@ export function useField<V>(
         focused: current.focused,
         touched: current.touched,
         required,
+        filled: current.raw !== '',
         chars: options.chars ?? definition.surface,
         setText(text) {
             const next = dispatch({ type: 'input', text });

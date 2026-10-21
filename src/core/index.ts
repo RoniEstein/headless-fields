@@ -23,7 +23,7 @@ export {
 } from './define';
 export type { Layer } from './define';
 export { evaluate, resolveFeedback } from './feedback';
-export type { Evaluation, Feedback, FeedbackContext, FieldStatus } from './feedback';
+export type { Evaluation, Feedback, FeedbackContext, FieldStatus, MessageTone } from './feedback';
 export {
     initialFieldState,
     rawForValue,

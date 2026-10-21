@@ -13,8 +13,8 @@ import { joinClasses, useFieldSkin, type FieldClassNames, type FieldSlot } from 
  * Unstyled parts. They render bare elements, wire ids and ARIA, and stamp
  * every element with the field's state as data attributes:
  *
- *   data-state="idle|valid|invalid"  data-tone="error|hint"
- *   data-focused  data-touched  data-disabled  data-required
+ *   data-state="idle|valid|invalid"  data-tone="error|info"
+ *   data-focused  data-touched  data-disabled  data-required  data-filled
  *   data-sized (the answer has a known width)  data-has-start  data-has-end
  *   data-reserve-indicator  data-indicator="valid|invalid"
  *
@@ -63,6 +63,7 @@ export function FieldRoot({
         'data-touched': flag(field.touched),
         'data-disabled': flag(disabled),
         'data-required': flag(field.required),
+        'data-filled': flag(field.filled),
         'data-sized': flag(field.chars !== undefined),
         'data-has-start': flag(hasStart),
         'data-has-end': flag(hasEnd),
@@ -73,12 +74,16 @@ export function FieldRoot({
     const context = {
         view: field,
         controller: isController(field) ? field : undefined,
-        ids: { input: base, label: `${base}-label`, message: `${base}-message` },
+        ids: { input: base, label: `${base}-label`, hint: `${base}-hint`, message: `${base}-message` },
         disabled,
         data,
         skin,
         classFor: (slot: FieldSlot, own?: string) =>
             merge(skin.classNames?.[slot], classNames?.[slot], own),
+        slotProps: (slot: FieldSlot, own?: string) => ({
+            'data-slot': slot,
+            className: context.classFor(slot, own) || undefined,
+        }),
     };
 
     const surface =
@@ -92,8 +97,9 @@ export function FieldRoot({
                 {...rest}
                 {...data}
                 data-field=""
+                data-skin={skin.name}
                 style={surface}
-                className={context.classFor('root', className) || undefined}
+                {...context.slotProps('root', className)}
             >
                 {children}
             </div>
@@ -107,7 +113,7 @@ export interface FieldLabelProps extends ComponentPropsWithoutRef<'label'> {
 }
 
 export function FieldLabel({ children, className, requiredMark = '*', ...rest }: FieldLabelProps) {
-    const { view, controller, ids, data, classFor } = useFieldContext('FieldLabel');
+    const { view, controller, ids, data, slotProps } = useFieldContext('FieldLabel');
     const text = children ?? controller?.definition.label;
     if (!text) return null;
     return (
@@ -116,11 +122,11 @@ export function FieldLabel({ children, className, requiredMark = '*', ...rest }:
             htmlFor={ids.input}
             {...rest}
             {...data}
-            className={classFor('label', className) || undefined}
+            {...slotProps('label', className)}
         >
             {text}
             {view.required && (
-                <span {...data} aria-hidden className={classFor('requiredMark') || undefined}>
+                <span {...data} aria-hidden {...slotProps('requiredMark')}>
                     {requiredMark}
                 </span>
             )}
@@ -130,8 +136,8 @@ export function FieldLabel({ children, className, requiredMark = '*', ...rest }:
 
 /** The box around the input, adornments and indicator. Sizing applies here. */
 export function FieldControl({ className, ...rest }: ComponentPropsWithoutRef<'div'>) {
-    const { data, classFor } = useFieldContext('FieldControl');
-    return <div {...rest} {...data} className={classFor('control', className) || undefined} />;
+    const { data, slotProps } = useFieldContext('FieldControl');
+    return <div {...rest} {...data} {...slotProps('control', className)} />;
 }
 
 export interface FieldAdornmentProps extends ComponentPropsWithoutRef<'div'> {
@@ -139,13 +145,13 @@ export interface FieldAdornmentProps extends ComponentPropsWithoutRef<'div'> {
 }
 
 export function FieldAdornment({ side, className, ...rest }: FieldAdornmentProps) {
-    const { data, classFor } = useFieldContext('FieldAdornment');
+    const { data, slotProps } = useFieldContext('FieldAdornment');
     return (
         <div
             {...rest}
             {...data}
             data-side={side}
-            className={classFor('adornment', className) || undefined}
+            {...slotProps('adornment', className)}
         />
     );
 }
@@ -153,25 +159,42 @@ export function FieldAdornment({ side, className, ...rest }: FieldAdornmentProps
 const FALLBACK_ICONS = { valid: '✓', invalid: '✕' };
 
 export function FieldIndicator({ className, ...rest }: ComponentPropsWithoutRef<'div'>) {
-    const { view, skin, data, classFor } = useFieldContext('FieldIndicator');
+    const { view, skin, data, slotProps } = useFieldContext('FieldIndicator');
     if (!view.indicator) return null;
     const icon = skin.icons?.[view.indicator] ?? FALLBACK_ICONS[view.indicator];
     return (
-        <div {...rest} {...data} aria-hidden className={classFor('indicator', className) || undefined}>
+        <div {...rest} {...data} aria-hidden {...slotProps('indicator', className)}>
             {icon}
         </div>
     );
 }
 
+/**
+ * Help that stays visible while the user answers. Renders nothing without a
+ * hint. Its place on screen is the skin's choice: the templates render it
+ * after the label, and a skin can move it (a flex `order`, a grid area)
+ * without touching the markup.
+ */
+export function FieldHint({ className, ...rest }: ComponentPropsWithoutRef<'p'>) {
+    const { view, ids, data, slotProps } = useFieldContext('FieldHint');
+    if (!view.hint) return null;
+    return (
+        <p id={ids.hint} {...rest} {...data} {...slotProps('hint', className)}>
+            {view.hint}
+        </p>
+    );
+}
+
+/** Errors, and information about the answer so far. */
 export function FieldMessage({ className, ...rest }: ComponentPropsWithoutRef<'p'>) {
-    const { view, ids, data, classFor } = useFieldContext('FieldMessage');
+    const { view, ids, data, slotProps } = useFieldContext('FieldMessage');
     if (!view.message) return null;
     return (
         <p
             id={ids.message}
             {...rest}
             {...data}
-            className={classFor('message', className) || undefined}
+            {...slotProps('message', className)}
         >
             {view.message}
         </p>

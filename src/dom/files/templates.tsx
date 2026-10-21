@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { FileEntry } from '../../react/useFileSelection';
-import { FieldControl, FieldLabel, FieldMessage } from '../parts';
+import { FieldControl, FieldHint, FieldLabel, FieldMessage } from '../parts';
 import {
     FileAnnouncer,
     FileDropArea,
@@ -39,6 +39,7 @@ export function FilePickerField(props: FileTemplateProps) {
     return (
         <FileField {...field}>
             <FieldLabel>{label}</FieldLabel>
+            <FieldHint />
             <FieldControl>
                 <FileTrigger>{triggerText(props)}</FileTrigger>
                 <FileSummary />
@@ -64,6 +65,7 @@ export function FileDropField(props: FileDropFieldProps) {
     return (
         <FileField {...field}>
             <FieldLabel>{label}</FieldLabel>
+            <FieldHint />
             <FileDropArea>
                 <FileTrigger>{triggerText(props)}</FileTrigger>
                 <FileDropHint>{hint}</FileDropHint>

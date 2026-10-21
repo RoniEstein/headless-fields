@@ -1,5 +1,5 @@
 export { useField } from './useField';
-export type { FieldController, FieldOptions } from './useField';
+export type { FieldController, FieldOptions, Hint } from './useField';
 export { staticField } from './view';
 export type { FieldView, Indicator, StaticFieldOptions } from './view';
 export { defaultFileStrings, useFileSelection } from './useFileSelection';

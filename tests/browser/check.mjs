@@ -15,6 +15,7 @@ const here = new URL('.', import.meta.url).pathname;
 const out = mkdtempSync(join(tmpdir(), 'headless-fields-browser-'));
 execFileSync('bun', ['build', join(here, 'harness.tsx'), '--outdir', out, '--target', 'browser'], { stdio: 'inherit' });
 copyFileSync(join(here, 'index.html'), join(out, 'index.html'));
+copyFileSync(join(here, '../../src/default.css'), join(out, 'default.css'));
 
 const failures = [];
 function check(name, ok, detail = '') {
@@ -31,7 +32,8 @@ const server = createServer((req, res) => {
     const file = req.url === '/' ? 'index.html' : req.url.slice(1);
     try {
         const body = readFileSync(join(out, file));
-        res.writeHead(200, { 'content-type': file.endsWith('.js') ? 'text/javascript' : 'text/html' });
+        const type = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
+        res.writeHead(200, { 'content-type': type });
         res.end(body);
     } catch {
         res.writeHead(404).end();
@@ -160,6 +162,52 @@ await page.locator('#terms').click();
 check('a link inside a card does not choose it', await page.evaluate(() => document.getElementById('plan-regular').checked && location.hash === '#terms'));
 const cardName = await page.locator('#plan-pro').evaluate((el) => [el.labels[0]?.textContent, el.getAttribute('aria-describedby')]);
 check('a card radio is named by its title only', cardName[0] === 'Pro' && !!cardName[1], JSON.stringify(cardName));
+
+// 8. A floating label is skin only: in the box while empty, small at the top once filled.
+const floatState = () =>
+    page.evaluate(() => {
+        const label = document.querySelector('#floating').closest('[data-field]').querySelector('label');
+        const box = document.getElementById('floating').getBoundingClientRect();
+        const at = label.getBoundingClientRect();
+        return { size: parseFloat(getComputedStyle(label).fontSize), inside: at.top >= box.top && at.bottom <= box.bottom, offset: Math.round(at.top - box.top) };
+    });
+const floatEmpty = await floatState();
+check('an empty floating label sits large inside the box', floatEmpty.size === 16 && floatEmpty.inside, JSON.stringify(floatEmpty));
+await page.locator('#floating').fill('204');
+await page.locator('#radio-after').focus();
+const filled = await floatState();
+check('a filled floating label shrinks to the top of the box', filled.size === 11 && filled.inside && filled.offset < floatEmpty.offset, JSON.stringify(filled));
+const hintBelow = await page.evaluate(() => {
+    const hint = document.getElementById('floating-hint').getBoundingClientRect();
+    return hint.top >= document.getElementById('floating').getBoundingClientRect().bottom;
+});
+check('the skin moves the hint below the box without new markup', hintBelow);
+
+// 9. default.css styles fields without a provider, and only those.
+const looks = await page.evaluate(() => {
+    const style = (el) => getComputedStyle(el);
+    return {
+        defaultRadius: style(document.getElementById('d-phone')).borderRadius,
+        skinnedRadius: style(document.getElementById('floating')).borderRadius,
+        hintColor: style(document.getElementById('d-phone-hint')).color,
+        skin: document.getElementById('d-phone').closest('[data-field]').getAttribute('data-skin'),
+        skinnedSkin: document.getElementById('floating').closest('[data-field]').getAttribute('data-skin'),
+    };
+});
+check('default.css styles a field with no provider', looks.defaultRadius === '8px' && looks.skin === 'default' && looks.hintColor === 'rgb(75, 85, 99)', JSON.stringify(looks));
+check('a provider skin turns default.css off', looks.skinnedRadius === '0px' && looks.skinnedSkin === null, JSON.stringify(looks));
+await page.locator('#d-phone').fill('20455');
+await page.locator('#d-date').fill('2/');
+await page.locator('#d-date').press('End');
+await page.locator('#d-date').type('29');
+await page.locator('#d-date').type('2023');
+await page.locator('#d-room').fill('Training room');
+await page.locator('#d-notes').fill('Ring the side door bell');
+await page.locator('#d-contact-phone').check();
+await page.locator('#radio-after').focus();
+const dateText = await page.locator('#d-date').inputValue();
+check('typing 2/ moves on to the day', dateText === '02 / 29 / 2023', JSON.stringify(dateText));
+if (process.env.SHOT) await page.locator('#defaults').screenshot({ path: process.env.SHOT });
 
 check('no page errors', errors.length === 0, errors.join(' | '));
 await browser.close();

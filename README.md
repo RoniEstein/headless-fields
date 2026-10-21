@@ -12,7 +12,13 @@ headless-fields/definitions  Field definitions built from the core: phone, posta
 headless-fields/react        useField and useFileSelection: behaviour as hooks. No DOM,
                              so they work for React DOM and React Native.
 headless-fields/dom          Unstyled parts, the composed <Field>, file fields, and skins.
+headless-fields/default.css  An optional default look for fields with no skin.
 ```
+
+headless-fields owns behaviour: what a field knows (the answer, what is
+wrong, the help text, filled, focused) and the ARIA that goes with it. It
+stamps that state on the markup as `data-*` attributes. How a field looks,
+and where its parts sit, belongs to the skin.
 
 A React Native renderer (`/native`) would sit beside `/dom` and reuse
 everything above it. It is NOT YET IMPLEMENTED.
@@ -22,13 +28,61 @@ everything above it. It is NOT YET IMPLEMENTED.
 Install the release tarball for a tag:
 
 ```bash
-bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.6.0
+bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.7.0
 ```
 
 The lockfile pins the tarball's integrity hash. Prefer this over
-`github:RoniEstein/headless-fields#v0.6.0` or a `git+https://github.com/…`
+`github:RoniEstein/headless-fields#v0.7.0` or a `git+https://github.com/…`
 URL: Bun resolves both through `GITHUB_API_URL`, which Forgejo and Gitea
 Actions point at their own forge, so installs in those CI runners fail.
+
+Then pick one of two setups.
+
+### Styled: the default look
+
+Import the stylesheet once (app entry or root CSS) and use fields with no
+provider:
+
+```ts
+import 'headless-fields/default.css';
+```
+
+It styles only fields whose root has `data-skin="default"`, which is every
+field with no `FieldSkinProvider` above it (or a provider that `extend`s the
+default). It sits in `@layer headless-fields` with zero-specificity
+selectors, so your own CSS always wins. Theme it with custom properties on
+`:root` or any ancestor:
+
+```css
+:root {
+    --hf-accent: #8e817c;      /* focus border, checked cards */
+    --hf-text: #111b23;        /* answers */
+    --hf-muted: #46484b;       /* hints, information */
+    --hf-placeholder: #6b7280; /* keep it at 4.5:1 on the field background */
+    --hf-border: #c2bab5;
+    --hf-error: #a05252;
+    --hf-radius: 0.5rem;
+}
+```
+
+With Tailwind v4 or other layered CSS, declare the layer first so your
+layers come after it: `@layer headless-fields, theme, base, components, utilities;`.
+
+### Headless: your own skin
+
+Don't import the stylesheet. Provide a skin (class strings per slot, plus
+icons) at the app root, in both the client and SSR entries:
+
+```tsx
+<FieldSkinProvider skin={projectSkin}>{app}</FieldSkinProvider>
+```
+
+A skin without a `name` turns the default look off for its fields, so the
+two setups can share a page. **AI agents writing a skin: follow
+[SKINNING.md](SKINNING.md)**, a step-by-step guide with the full slot and
+state reference and a verification checklist.
+
+### Build notes
 
 The package ships TypeScript source. Bundlers compile it like your own code.
 For Vite SSR, keep it bundled so Node never loads `.ts` at runtime:
@@ -58,12 +112,20 @@ the base and the rules are data:
 
 1. A server error always wins.
 2. An `immediate` issue is an error at once (a bad area code).
-3. A `blur` issue is a hint while the user types ("3 of 10 digits") and
-   becomes an error once they leave the field. Refocusing turns it back into
-   a hint.
-4. Otherwise the definition's description ("January 2, 1980"), then the
-   static `hint`.
+3. A `blur` issue is information while the user types ("3 of 10 digits")
+   and becomes an error once they leave the field. Refocusing turns it back
+   into information.
+4. Otherwise the definition's description of the answer ("January 2, 1980").
 5. Valid means non-empty, complete and issue-free.
+
+The **hint** is not part of this policy. It is help that stays visible while
+the user answers ("For example, Training room"), in its own part
+(`FieldHint`), and a message never replaces it. Both are linked to the input
+with `aria-describedby`, hint first. `hint` is a string, or on text fields a
+function of the text typed so far for help that follows the answer:
+`` hint={(raw) => `${raw.length} of 500 characters`} ``. Help that only
+depends on other state (a province) needs no function: pass a different
+string and the field re-renders.
 
 ### Three values
 
@@ -98,7 +160,15 @@ returns `{ message, timing: 'immediate' | 'blur' }` or `null`.
 
 Definitions that depend on options are factories: `number({ min: 1, max: 99,
 integer: true })`, `date({ maxDate })`, `time({ minTime, maxTime, stepMinutes })`,
-`healthNumber('MB')`.
+`healthNumber('MB')`, `longText({ maxLength: 500 })`.
+
+`longText()` counts as the user types ("120 of 500 characters") and says how
+far over the limit an answer is ("20 characters too many") instead of
+cutting it off, so a pasted answer is never silently shortened. Render it
+with `multiline`.
+
+Separators finish a part: typing `4/` in a date is April (`04`) and moves on
+to the day; `1:` in a time is hour `01`.
 
 `time()` gives the form 24-hour `HH:MM` (a database `09:00:00` loads as
 `09:00`). It also accepts `930p` or an autofilled `9:30 PM`, and reads the
@@ -146,13 +216,19 @@ comes from data attributes on every part, so a skin needs no logic:
 | Attribute | Values |
 |---|---|
 | `data-state` | `idle`, `valid`, `invalid` |
-| `data-tone` | `error`, `hint` (on every part; meant for the message) |
-| `data-focused`, `data-touched`, `data-disabled`, `data-required` | present or absent |
+| `data-tone` | `error`, `info` (on every part; meant for the message) |
+| `data-focused`, `data-touched`, `data-disabled`, `data-required`, `data-filled` | present or absent |
 | `data-indicator` | `valid`, `invalid` (the icon being shown) |
 | `data-sized`, `data-has-start`, `data-has-end`, `data-reserve-indicator` | present or absent |
 
-Slots: `root`, `label`, `requiredMark`, `control`, `input`, `adornment`
-(with `data-side="start|end"`), `indicator`, `message`.
+Slots: `root`, `label`, `requiredMark`, `hint`, `control`, `input`,
+`adornment` (with `data-side="start|end"`), `indicator`, `message`. Each part
+also carries `data-slot` with its slot name, and the root carries `data-skin`
+with the skin's `name`.
+
+The templates render the hint right after the label. Where it shows is the
+skin's call: make the root `flex flex-col` and give `hint` an `order` to
+move it below the box, without touching the markup.
 
 ```tsx
 import { FieldSkinProvider, type FieldSkin } from 'headless-fields/dom';
@@ -163,13 +239,34 @@ export const skin: FieldSkin = {
     classNames: {
         label: 'mb-1.5 block text-sm font-medium text-body',
         input: 'w-full rounded-lg border px-4 py-2.5 data-[state=invalid]:border-red-300',
-        message: 'mt-1.5 text-sm data-[tone=error]:text-red-600 data-[tone=hint]:text-accent',
+        hint: 'mb-1.5 text-sm text-body-muted',
+        message: 'mt-1.5 text-sm data-[tone=error]:text-red-600 data-[tone=info]:text-accent',
     },
     icons: { valid: <CheckCircle />, invalid: <XCircle /> },
 };
 
 <FieldSkinProvider skin={skin}>…</FieldSkinProvider>
 ```
+
+A floating label is a skin, not a different field. The label sits in the
+box while the field is empty and unfocused, then shrinks to the top edge;
+flex `order` puts the hint and message below the box:
+
+```ts
+export const floatingLabels: FieldSkin = {
+    classNames: {
+        root: 'relative flex flex-col',
+        label: 'pointer-events-none absolute top-3.5 left-4 z-10 text-sm transition-all data-filled:top-1.5 data-filled:text-xs data-focused:top-1.5 data-focused:text-xs',
+        control: 'order-1',
+        input: 'pt-6 pb-2 placeholder:text-transparent focus:placeholder:text-gray-500',
+        hint: 'order-2 mt-1.5 text-sm',
+        message: 'order-3 mt-1.5 text-sm',
+    },
+};
+```
+
+Layer it with `<FieldSkinProvider skin={floatingLabels} extend>`. The browser
+check (`bun run test:browser`) renders this pattern with the stock `Field`.
 
 Several themes at once:
 
@@ -200,6 +297,7 @@ const field = useField(phone, { value, onChange });
 
 <FieldRoot field={field} hasStart>
     <FieldLabel />
+    <FieldHint />
     <FieldControl>
         <FieldAdornment side="start"><PhoneIcon /></FieldAdornment>
         <FieldInput validateOnSubmit />
@@ -337,6 +435,7 @@ const f = useFileField(artwork, { value, onChange: setValue, required, serverErr
         ))}
     </ul>
     {f.rejections.map((r) => <p key={r.file.name} {...f.getRejectionProps(r)}>{r.message}</p>)}
+    {f.view.hint && <p {...f.getHintProps()}>{f.view.hint}</p>}
     <p {...f.getMessageProps()}>{f.view.message}</p>
     <div {...f.getAnnouncerProps()}>{f.announcement}</div>
 </div>
@@ -351,7 +450,7 @@ const f = useFileField(artwork, { value, onChange: setValue, required, serverErr
 | `getItemProps(entry)` | `data-kind`, `data-file-id` |
 | `getRemoveProps(entry)` | `type=button`, "Remove name" label, removal with focus moving to the next file or the input |
 | `getRejectionProps(r)` | `data-error-code` |
-| `getMessageProps` / `getAnnouncerProps` | message id and tone; a polite, visually hidden live region |
+| `getHintProps` / `getMessageProps` / `getAnnouncerProps` | hint id; message id and tone; a polite, visually hidden live region |
 
 Every getter takes your props and merges them: your handlers run first, and
 `event.preventDefault()` skips ours. Skip a getter and you skip what it
@@ -364,7 +463,7 @@ images.
 
 Slots: `trigger`, `dropArea`, `dropHint`, `fileSummary`, `fileList`,
 `fileItem`, `filePreview`, `fileName`, `fileSize`, `fileRemove`,
-`fileRejections`, `fileRejection`, plus the shared `label` and `message`.
+`fileRejections`, `fileRejection`, plus the shared `label`, `hint` and `message`.
 Icons: `upload` (in triggers), `remove`, `file` (rows without an image).
 
 State attributes on every file part: `data-state`, `data-disabled`,
@@ -444,6 +543,7 @@ group unanswered), `serverError` (always shown), `hint`, `disabled`, `name`
 ```tsx
 <RadioGroup value={plan} onChange={setPlan} name="plan">
     <RadioGroupLabel>Plan</RadioGroupLabel>
+    <FieldHint />
     <RadioCards render={<section />}>
         <RadioCard value="pro" render={(props, { checked }) => <article {...props} />}>
             <RadioLabel>Pro</RadioLabel>
@@ -474,6 +574,7 @@ const g = useRadioGroup({ value, onChange, required });
             <div {...g.getDescriptionProps(s)}>{s.details}</div>
         </div>
     ))}
+    {g.view.hint && <p {...g.getHintProps()}>{g.view.hint}</p>}
     {g.view.message && <p {...g.getMessageProps()}>{g.view.message}</p>}
 </fieldset>
 ```
@@ -488,7 +589,7 @@ Native or a custom control.
 Plain: `radioOptions`, `radio`, `radioInput`, `radioLabel`,
 `radioDescription`. Cards: `radioCards`, `radioCard`, `radioCardInput`,
 `radioCardLabel`, `radioCardDescription`. Plus the shared `label`,
-`requiredMark` and `message`. Every part carries `data-state`, `data-tone`,
+`requiredMark`, `hint` and `message`. Every part carries `data-state`, `data-tone`,
 `data-touched`, `data-required`; options add `data-checked` and
 `data-disabled`. Style focus with `has-[:focus-visible]`.
 

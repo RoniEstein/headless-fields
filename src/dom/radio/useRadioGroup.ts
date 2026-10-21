@@ -1,6 +1,6 @@
 import { useCallback, useId, useRef, useState } from 'react';
 import { useChoice, type Choice, type ChoiceOptions } from '../../react/useChoice';
-import type { FieldDataAttributes } from '../context';
+import { describedBy, type FieldDataAttributes } from '../context';
 import { mergeProps, type ElementProps } from '../files/props';
 
 const flag = (on: boolean | undefined) => (on ? '' : undefined);
@@ -21,6 +21,7 @@ export interface RadioGroupOptions<T extends string> extends ChoiceOptions<T> {
 export interface RadioGroupIds {
     group: string;
     label: string;
+    hint: string;
     message: string;
 }
 
@@ -45,6 +46,8 @@ export interface RadioGroup<T extends string> extends Choice<T> {
     getOptionLabelProps: (option: RadioOptionRef<T>, props?: ElementProps) => ElementProps;
     /** Extra text or markup about the option, read after its name. */
     getDescriptionProps: (option: RadioOptionRef<T>, props?: ElementProps) => ElementProps;
+    /** The group's help text, read with the group. */
+    getHintProps: (props?: ElementProps) => ElementProps;
     getMessageProps: (props?: ElementProps) => ElementProps;
 }
 
@@ -67,7 +70,7 @@ export function useRadioGroup<T extends string>(options: RadioGroupOptions<T>): 
     const generated = useId();
     const base = options.id ?? `radio-${generated}`;
     const name = options.name ?? base;
-    const ids: RadioGroupIds = { group: base, label: `${base}-label`, message: `${base}-message` };
+    const ids: RadioGroupIds = { group: base, label: `${base}-label`, hint: `${base}-hint`, message: `${base}-message` };
     const { view, disabled } = choice;
 
     // Descriptions register when they mount, so an input only points at a
@@ -97,6 +100,7 @@ export function useRadioGroup<T extends string>(options: RadioGroupOptions<T>): 
         'data-touched': flag(view.touched),
         'data-disabled': flag(disabled),
         'data-required': flag(view.required),
+        'data-filled': flag(view.filled),
         'data-indicator': view.indicator ?? undefined,
     };
 
@@ -124,7 +128,7 @@ export function useRadioGroup<T extends string>(options: RadioGroupOptions<T>): 
                     id: ids.group,
                     role: 'radiogroup',
                     'aria-labelledby': ids.label,
-                    'aria-describedby': view.message ? ids.message : undefined,
+                    'aria-describedby': describedBy(view, ids),
                     'aria-required': view.required || undefined,
                     'aria-invalid': view.status === 'invalid' || undefined,
                     'aria-disabled': disabled || undefined,
@@ -178,6 +182,7 @@ export function useRadioGroup<T extends string>(options: RadioGroupOptions<T>): 
             const own = optionIds(option.value);
             return mergeProps({ ...itemData(option), id: own.description, ref: register(own.description) }, props);
         },
+        getHintProps: (props) => mergeProps({ ...data, id: ids.hint }, props),
         getMessageProps: (props) => mergeProps({ ...data, id: ids.message }, props),
     };
 }

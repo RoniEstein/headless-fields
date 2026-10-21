@@ -7,7 +7,7 @@ import {
     type Ref,
 } from 'react';
 import type { InputHints } from '../core/types';
-import { useFieldContext, type FieldContextValue } from './context';
+import { describedBy, useFieldContext, type FieldContextValue } from './context';
 
 type TextElement = HTMLInputElement | HTMLTextAreaElement;
 
@@ -73,7 +73,7 @@ function useTextControl<E extends TextElement>(
         disabled: disabled ?? context.disabled,
         required: required ?? view.required,
         'aria-invalid': view.status === 'invalid' || undefined,
-        'aria-describedby': view.message ? ids.message : undefined,
+        'aria-describedby': describedBy(view, ids),
     };
 
     if (!controller) {
@@ -133,7 +133,7 @@ export function FieldInput({
             {...rest}
             {...bound}
             placeholder={placeholder ?? bound.placeholder}
-            className={context.classFor('input', className) || undefined}
+            {...context.slotProps('input', className)}
         />
     );
 }
@@ -167,7 +167,7 @@ export function FieldTextarea({
             {...rest}
             {...bound}
             placeholder={placeholder ?? bound.placeholder}
-            className={context.classFor('input', className) || undefined}
+            {...context.slotProps('input', className)}
         />
     );
 }

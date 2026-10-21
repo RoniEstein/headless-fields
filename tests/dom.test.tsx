@@ -49,19 +49,68 @@ describe('Field', () => {
         expect(emitted).toEqual(['(204) 555 - 1234']);
     });
 
-    test('a blur issue hints while typing and becomes an error after blur', () => {
+    test('a blur issue informs while typing and becomes an error after blur', () => {
         render(<Controlled />);
         const input = screen.getByLabelText(/Phone Number/);
         fireEvent.focus(input);
         fireEvent.change(input, { target: { value: '204' } });
         const root = input.closest('[data-field]')!;
         expect(root.getAttribute('data-state')).toBe('idle');
-        expect(screen.getByText('3 of 10 digits').getAttribute('data-tone')).toBe('hint');
+        expect(screen.getByText('3 of 10 digits').getAttribute('data-tone')).toBe('info');
 
         fireEvent.blur(input);
         expect(root.getAttribute('data-state')).toBe('invalid');
         expect(input.getAttribute('aria-invalid')).toBe('true');
         expect(input.getAttribute('aria-describedby')).toBe(screen.getByText('3 of 10 digits').id);
+    });
+
+    test('the hint sits after the label and stays when an error arrives', () => {
+        render(<Field definition={phone} value="" onChange={() => {}} hint="Mobile preferred" />);
+        const input = screen.getByLabelText(/Phone Number/);
+        const hint = screen.getByText('Mobile preferred');
+        const label = input.closest('[data-field]')!.querySelector('label')!;
+        expect(label.nextElementSibling).toBe(hint);
+        expect(input.getAttribute('aria-describedby')).toBe(hint.id);
+
+        fireEvent.focus(input);
+        fireEvent.change(input, { target: { value: '204' } });
+        fireEvent.blur(input);
+        const error = screen.getByText('3 of 10 digits');
+        expect(error.getAttribute('data-tone')).toBe('error');
+        expect(screen.getByText('Mobile preferred')).toBe(hint);
+        expect(input.getAttribute('aria-describedby')).toBe(`${hint.id} ${error.id}`);
+    });
+
+    test('data-filled follows the answer, for floating labels and the like', () => {
+        function Typed() {
+            const [value, setValue] = useState('');
+            return <Field definition={phone} value={value} onChange={setValue} />;
+        }
+        render(<Typed />);
+        const input = screen.getByLabelText(/Phone Number/);
+        const label = input.closest('[data-field]')!.querySelector('label')!;
+        expect(label.hasAttribute('data-filled')).toBe(false);
+        fireEvent.change(input, { target: { value: '2' } });
+        expect(label.hasAttribute('data-filled')).toBe(true);
+        expect(input.hasAttribute('data-filled')).toBe(true);
+    });
+
+    test('a hint function follows the text typed so far', () => {
+        function Counted() {
+            const [value, setValue] = useState('');
+            return (
+                <Field
+                    definition={phone}
+                    value={value}
+                    onChange={setValue}
+                    hint={(raw) => `${raw.length} digits typed`}
+                />
+            );
+        }
+        render(<Counted />);
+        expect(screen.getByText('0 digits typed')).toBeTruthy();
+        fireEvent.change(screen.getByLabelText(/Phone Number/), { target: { value: '204' } });
+        expect(screen.getByText('3 digits typed')).toBeTruthy();
     });
 
     test('a reset from the form clears a partial answer', () => {

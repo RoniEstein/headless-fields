@@ -64,10 +64,10 @@ export function FileField({ definition, classNames, className, children, ...opti
  *  useFileFieldContext().open() from it (that path needs JavaScript). */
 export function FileTrigger({ children, className, render }: PartProps<FileFieldState> & { children?: ReactNode }) {
     const field = useFileFieldContext('FileTrigger');
-    const { classFor, skin } = useFieldContext('FileTrigger');
+    const { slotProps, skin } = useFieldContext('FileTrigger');
     const fallback = isValidElement<ElementProps>(render) ? (render.props.children as ReactNode) : undefined;
     const props = field.getTriggerProps({
-        className: classFor('trigger', className) || undefined,
+        ...slotProps('trigger', className),
         children: (
             <>
                 <input {...field.getInputProps()} />
@@ -83,17 +83,17 @@ export function FileTrigger({ children, className, render }: PartProps<FileField
  *  FileTrigger inside it for keyboard and screen-reader users. */
 export function FileDropArea({ children, className, render }: PartProps<FileFieldState> & { children?: ReactNode }) {
     const field = useFileFieldContext('FileDropArea');
-    const { classFor } = useFieldContext('FileDropArea');
-    const props = field.getDropProps({ className: classFor('dropArea', className) || undefined, children });
+    const { slotProps } = useFieldContext('FileDropArea');
+    const props = field.getDropProps({ ...slotProps('dropArea', className), children });
     return renderPart('div', props, render, field);
 }
 
 /** Short instruction text inside a drop area ("or drop files here"). */
 export function FileDropHint({ children, className }: { children: ReactNode; className?: string }) {
     const field = useFileFieldContext('FileDropHint');
-    const { classFor } = useFieldContext('FileDropHint');
+    const { slotProps } = useFieldContext('FileDropHint');
     return (
-        <span {...field.data} className={classFor('dropHint', className) || undefined}>
+        <span {...field.data} {...slotProps('dropHint', className)}>
             {children}
         </span>
     );
@@ -102,8 +102,8 @@ export function FileDropHint({ children, className }: { children: ReactNode; cla
 /** "No file chosen", "brief.pdf" or "3 files chosen". */
 export function FileSummary({ className, render }: PartProps<FileFieldState>) {
     const field = useFileFieldContext('FileSummary');
-    const { classFor } = useFieldContext('FileSummary');
-    const props = { ...field.data, className: classFor('fileSummary', className) || undefined, children: field.summary };
+    const { slotProps } = useFieldContext('FileSummary');
+    const props = { ...field.data, ...slotProps('fileSummary', className), children: field.summary };
     return renderPart('span', props, render, field);
 }
 
@@ -115,12 +115,12 @@ export function FileList({
     render,
 }: PartProps<FileFieldState> & { children?: (entry: FileEntry<File>) => ReactNode }) {
     const field = useFileFieldContext('FileList');
-    const { classFor } = useFieldContext('FileList');
+    const { slotProps } = useFieldContext('FileList');
     if (field.entries.length === 0) return null;
     const rows = field.entries.map((entry) => (
         <Fragment key={entry.id}>{children ? children(entry) : <FileItem entry={entry} />}</Fragment>
     ));
-    const props = { ...field.data, className: classFor('fileList', className) || undefined, children: rows };
+    const props = { ...field.data, ...slotProps('fileList', className), children: rows };
     return renderPart('ul', props, render, field);
 }
 
@@ -132,7 +132,7 @@ export function FileItem({
     render,
 }: PartProps<FileEntry<File>> & { entry: FileEntry<File>; children?: ReactNode }) {
     const field = useFileFieldContext('FileItem');
-    const { classFor } = useFieldContext('FileItem');
+    const { slotProps } = useFieldContext('FileItem');
     const content = children ?? (
         <>
             <FilePreview />
@@ -142,7 +142,7 @@ export function FileItem({
         </>
     );
     const props = field.getItemProps(entry, {
-        className: classFor('fileItem', className) || undefined,
+        ...slotProps('fileItem', className),
         children: content,
     });
     return <FileEntryContext.Provider value={entry}>{renderPart('li', props, render, entry)}</FileEntryContext.Provider>;
@@ -152,9 +152,9 @@ export function FileItem({
 export function FilePreview({ className, render }: PartProps<FileEntry<File>>) {
     const field = useFileFieldContext('FilePreview');
     const entry = useEntry('FilePreview');
-    const { classFor, skin } = useFieldContext('FilePreview');
+    const { slotProps, skin } = useFieldContext('FilePreview');
     const url = field.previewUrl(entry);
-    const shared = { ...field.getItemProps(entry), className: classFor('filePreview', className) || undefined };
+    const shared = { ...field.getItemProps(entry), ...slotProps('filePreview', className) };
     if (url) return renderPart('img', { ...shared, src: url, alt: '' }, render, entry);
     if (!skin.icons?.file && !render) return null;
     return renderPart('span', { ...shared, 'aria-hidden': true, children: skin.icons?.file }, render, entry);
@@ -163,9 +163,9 @@ export function FilePreview({ className, render }: PartProps<FileEntry<File>>) {
 export function FileName({ className }: { className?: string }) {
     const field = useFileFieldContext('FileName');
     const entry = useEntry('FileName');
-    const { classFor } = useFieldContext('FileName');
+    const { slotProps } = useFieldContext('FileName');
     return (
-        <span {...field.getItemProps(entry)} className={classFor('fileName', className) || undefined}>
+        <span {...field.getItemProps(entry)} {...slotProps('fileName', className)}>
             {entry.name}
         </span>
     );
@@ -174,9 +174,9 @@ export function FileName({ className }: { className?: string }) {
 export function FileSize({ className, format = formatBytes }: { className?: string; format?: (bytes: number) => string }) {
     const field = useFileFieldContext('FileSize');
     const entry = useEntry('FileSize');
-    const { classFor } = useFieldContext('FileSize');
+    const { slotProps } = useFieldContext('FileSize');
     return (
-        <span {...field.getItemProps(entry)} className={classFor('fileSize', className) || undefined}>
+        <span {...field.getItemProps(entry)} {...slotProps('fileSize', className)}>
             {format(entry.size)}
         </span>
     );
@@ -187,10 +187,10 @@ export function FileSize({ className, format = formatBytes }: { className?: stri
 export function FileRemove({ children, className, render }: PartProps<FileEntry<File>> & { children?: ReactNode }) {
     const field = useFileFieldContext('FileRemove');
     const entry = useEntry('FileRemove');
-    const { classFor, skin } = useFieldContext('FileRemove');
+    const { slotProps, skin } = useFieldContext('FileRemove');
     const fallback = isValidElement<ElementProps>(render) ? (render.props.children as ReactNode) : undefined;
     const props = field.getRemoveProps(entry, {
-        className: classFor('fileRemove', className) || undefined,
+        ...slotProps('fileRemove', className),
         children: children ?? fallback ?? skin.icons?.remove ?? '×',
     });
     return renderPart('button', props, render, entry);
@@ -199,15 +199,15 @@ export function FileRemove({ children, className, render }: PartProps<FileEntry<
 /** Why files weren't added, one line each, until the next change. */
 export function FileRejections({ className }: { className?: string }) {
     const field = useFileFieldContext('FileRejections');
-    const { classFor } = useFieldContext('FileRejections');
+    const { slotProps } = useFieldContext('FileRejections');
     if (field.rejections.length === 0) return null;
     return (
-        <ul {...field.data} className={classFor('fileRejections', className) || undefined}>
+        <ul {...field.data} {...slotProps('fileRejections', className)}>
             {field.rejections.map((rejection, index) => (
                 <li
                     key={`${rejection.file.name}-${index}`}
                     {...field.getRejectionProps(rejection)}
-                    className={classFor('fileRejection') || undefined}
+                    {...slotProps('fileRejection')}
                 >
                     {rejection.message}
                 </li>

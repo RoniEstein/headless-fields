@@ -5,6 +5,7 @@ import { FieldInput, FieldTextarea, type FieldInputProps, type FieldTextareaProp
 import {
     FieldAdornment,
     FieldControl,
+    FieldHint,
     FieldIndicator,
     FieldLabel,
     FieldMessage,
@@ -37,8 +38,8 @@ export interface FieldProps<V> extends FieldOptions<V> {
 }
 
 /**
- * The standard field layout: label, then the control box holding adornments,
- * the input and the indicator, then the message. Compose the parts directly
+ * The standard field layout: label, hint, then the control box holding
+ * adornments, the input and the indicator, then the message. Compose the parts directly
  * for anything else.
  */
 export function Field<V>({
@@ -78,6 +79,7 @@ export function Field<V>({
             classNames={classNames}
         >
             {label !== false && <FieldLabel>{label}</FieldLabel>}
+            <FieldHint />
             <FieldControl>
                 {start !== undefined && <FieldAdornment side="start">{start}</FieldAdornment>}
                 {multiline ? (

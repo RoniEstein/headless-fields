@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { evaluate, resolveFeedback, type FieldDefinition } from '../src/core';
-import { birthdate, date, email, healthNumber, number, phone, postalCode, time } from '../src/definitions';
+import { birthdate, date, email, healthNumber, longText, number, phone, postalCode, time } from '../src/definitions';
 
 const issue = <V>(definition: FieldDefinition<V>, raw: string) => evaluate(definition, raw, false).issue?.message ?? null;
 const accept = <V>(definition: FieldDefinition<V>, text: string) => definition.mask.accept(text);
@@ -63,9 +63,19 @@ describe('dates', () => {
         expect(accept(birthdate, '1980-01-02')).toBe('01021980');
         expect(birthdate.codec.toValue('01021980')).toBe('1980-01-02');
     });
+    test('a separator after one month or day digit finishes that part', () => {
+        expect(accept(birthdate, '4/')).toBe('04');
+        expect(accept(birthdate, '04 / 4/')).toBe('0404');
+        expect(accept(birthdate, '04 / 4-')).toBe('0404');
+        expect(accept(birthdate, '4/4/1992')).toBe('04041992');
+        expect(accept(birthdate, '0/')).toBe('0');
+        expect(accept(birthdate, '12 / 1')).toBe('121');
+        expect(accept(birthdate, '04 / 04 / 1/')).toBe('04041');
+    });
+
     test('describes the date as it is typed', () => {
         const result = resolveFeedback(birthdate, { raw: '0102', touched: false, required: false });
-        expect(result).toMatchObject({ tone: 'hint', message: 'January 2' });
+        expect(result).toMatchObject({ tone: 'info', message: 'January 2' });
     });
     test('catches impossible parts early', () => {
         expect(issue(birthdate, '13')).toBe('Invalid month');
@@ -95,6 +105,8 @@ describe('time', () => {
         expect(display(t, '0930')).toBe('09:30');
         expect(accept(t, '9')).toBe('09');
         expect(accept(t, '930')).toBe('0930');
+        expect(accept(t, '1:')).toBe('01');
+        expect(accept(t, '1.')).toBe('01');
         expect(t.codec.toValue('2130')).toBe('21:30');
         expect(t.codec.fromValue('09:30:00')).toBe('0930');
     });
@@ -141,5 +153,22 @@ describe('health numbers', () => {
     });
     test('the same province gives the same definition', () => {
         expect(healthNumber('BC')).toBe(healthNumber('BC'));
+    });
+});
+
+describe('long text', () => {
+    const notes = longText({ maxLength: 10 });
+    const feedback = (raw: string) => resolveFeedback(notes, { raw, touched: false, required: false });
+    test('counts characters as the user types', () => {
+        expect(feedback('hello')).toMatchObject({ tone: 'info', message: '5 of 10 characters' });
+        expect(feedback('')).toMatchObject({ tone: null, message: '' });
+    });
+    test('earns no valid mark: any text under the limit is fine', () => {
+        expect(notes.indicateValid).toBe(false);
+    });
+    test('keeps text past the limit and says how far over it is', () => {
+        expect(accept(notes, 'hello world!')).toBe('hello world!');
+        expect(feedback('hello world')).toMatchObject({ status: 'invalid', tone: 'error', message: '1 character too many' });
+        expect(issue(notes, 'hello world!')).toBe('2 characters too many');
     });
 });

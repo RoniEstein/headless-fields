@@ -6,7 +6,18 @@ import type { FieldSlot, FieldSkin } from './skin';
 export interface FieldIds {
     input: string;
     label: string;
+    hint: string;
     message: string;
+}
+
+/** The aria-describedby value for a field's control: hint first, then the
+ *  message, each only while it has text. */
+export function describedBy(
+    view: Pick<FieldView, 'hint' | 'message'>,
+    ids: { hint: string; message: string },
+): string | undefined {
+    const parts = [view.hint && ids.hint, view.message && ids.message].filter(Boolean);
+    return parts.length > 0 ? parts.join(' ') : undefined;
 }
 
 /** The state attributes every part carries, for skins to select on. */
@@ -22,6 +33,8 @@ export interface FieldContextValue {
     skin: FieldSkin;
     /** Skin class + per-field class + the part's own className. */
     classFor: (slot: FieldSlot, own?: string) => string;
+    /** data-slot plus classFor's className, for spreading onto a part. */
+    slotProps: (slot: FieldSlot, own?: string) => { 'data-slot': FieldSlot; className: string | undefined };
 }
 
 export const FieldContext = createContext<FieldContextValue | null>(null);

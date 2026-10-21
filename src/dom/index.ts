@@ -3,6 +3,7 @@ export type { FieldProps } from './Field';
 export {
     FieldAdornment,
     FieldControl,
+    FieldHint,
     FieldIndicator,
     FieldLabel,
     FieldMessage,
@@ -12,6 +13,7 @@ export type { FieldAdornmentProps, FieldLabelProps, FieldRootProps } from './par
 export { FieldInput, FieldTextarea } from './inputs';
 export type { FieldInputProps, FieldTextareaProps } from './inputs';
 export {
+    defaultSkin,
     extendSkin,
     FieldSkinProvider,
     joinClasses,
@@ -25,7 +27,7 @@ export type {
     FieldSlot,
     MergeClasses,
 } from './skin';
-export { FieldContext, useFieldContext } from './context';
+export { describedBy, FieldContext, useFieldContext } from './context';
 export type { FieldContextValue, FieldIds } from './context';
 
 // File fields: behaviour (useFileField), parts, and two starter templates.

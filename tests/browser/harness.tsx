@@ -1,7 +1,9 @@
 import { createRoot } from 'react-dom/client';
 import { useState } from 'react';
 import { files, MB } from '../../src/core';
+import { date, longText, phone } from '../../src/definitions';
 import {
+    Field,
     FieldSkinProvider,
     FileDropField,
     FilePickerField,
@@ -93,6 +95,54 @@ function Plans() {
     );
 }
 
+// A floating label, made only of skin: the label sits in the box while it is
+// empty and unfocused, and shrinks to the top edge otherwise. The hint is
+// moved below the box with a flex order; the markup is the stock Field.
+const floating: FieldSkin = {
+    classNames: {
+        root: 'float',
+        label: 'float-label',
+        hint: 'float-hint',
+        control: 'float-control',
+        input: 'float-input',
+        message: 'float-message',
+    },
+};
+
+function Floating() {
+    const [value, setValue] = useState('');
+    return (
+        <FieldSkinProvider skin={floating}>
+            <Field id="floating" definition={phone} value={value} onChange={setValue} hint="Mobile preferred" />
+        </FieldSkinProvider>
+    );
+}
+
+// No provider: the default skin, styled by default.css. Definitions live
+// outside render: a new definition object resets the field.
+const anyDate = date();
+const roomNote = longText({ maxLength: 40 });
+const notesText = longText({ maxLength: 20 });
+
+function Defaults() {
+    const [tel, setTel] = useState('');
+    const [when, setWhen] = useState('');
+    const [notes, setNotes] = useState('');
+    const [room, setRoom] = useState('');
+    const [contact, setContact] = useState('');
+    return (
+        <form id="defaults" style={{ display: 'grid', gap: 20, maxWidth: 520, padding: 24 }}>
+            <Field id="d-phone" definition={phone} value={tel} onChange={setTel} required hint="Mobile preferred" />
+            <Field id="d-date" definition={anyDate} label="Date" value={when} onChange={setWhen} />
+            <Field id="d-room" definition={roomNote} label="Room (optional)" placeholder="e.g. Training room" value={room} onChange={setRoom} />
+            <Field id="d-notes" definition={notesText} label="Notes" multiline rows={3} value={notes} onChange={setNotes} hint="Anything we should know" />
+            <RadioGroupField id="d-contact" label="Contact" options={[{ value: 'email', label: 'Email' }, { value: 'phone', label: 'Phone', description: 'Weekdays only' }]} value={contact} onChange={setContact} hint="How we reach you" />
+        </form>
+    );
+}
+
+createRoot(document.getElementById('default-root')!).render(<Defaults />);
+
 createRoot(document.getElementById('root')!).render(
     <FieldSkinProvider skin={skin}>
         <form id="form" onSubmit={(e) => e.preventDefault()}>
@@ -103,6 +153,7 @@ createRoot(document.getElementById('root')!).render(
             <Decider />
             <button type="button" id="radio-after">after</button>
             <Plans />
+            <Floating />
         </form>
     </FieldSkinProvider>,
 );

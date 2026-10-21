@@ -1,6 +1,6 @@
 {
     "name": "headless-fields",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "description": "Headless form fields: a DOM-free core (masks, rules, feedback policy, field definitions), React hooks for any renderer, and unstyled DOM parts themed by skins.",
     "license": "MIT",
     "author": "Roni Estein",
@@ -19,16 +19,20 @@
         "tailwind"
     ],
     "type": "module",
-    "sideEffects": false,
+    "sideEffects": [
+        "*.css"
+    ],
     "exports": {
         "./core": "./src/core/index.ts",
         "./definitions": "./src/definitions/index.ts",
         "./react": "./src/react/index.ts",
-        "./dom": "./src/dom/index.ts"
+        "./dom": "./src/dom/index.ts",
+        "./default.css": "./src/default.css"
     },
     "files": [
         "src",
-        "README.md"
+        "README.md",
+        "SKINNING.md"
     ],
     "scripts": {
         "test": "bun test",
