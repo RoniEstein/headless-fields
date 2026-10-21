@@ -133,7 +133,7 @@ export function FieldInput({
             {...rest}
             {...bound}
             placeholder={placeholder ?? bound.placeholder}
-            className={context.classFor('input', className) || undefined}
+            {...context.slotProps('input', className)}
         />
     );
 }
@@ -167,7 +167,7 @@ export function FieldTextarea({
             {...rest}
             {...bound}
             placeholder={placeholder ?? bound.placeholder}
-            className={context.classFor('input', className) || undefined}
+            {...context.slotProps('input', className)}
         />
     );
 }

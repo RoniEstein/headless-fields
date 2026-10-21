@@ -13,6 +13,7 @@ export type { FieldAdornmentProps, FieldLabelProps, FieldRootProps } from './par
 export { FieldInput, FieldTextarea } from './inputs';
 export type { FieldInputProps, FieldTextareaProps } from './inputs';
 export {
+    defaultSkin,
     extendSkin,
     FieldSkinProvider,
     joinClasses,

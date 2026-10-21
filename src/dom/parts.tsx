@@ -80,6 +80,10 @@ export function FieldRoot({
         skin,
         classFor: (slot: FieldSlot, own?: string) =>
             merge(skin.classNames?.[slot], classNames?.[slot], own),
+        slotProps: (slot: FieldSlot, own?: string) => ({
+            'data-slot': slot,
+            className: context.classFor(slot, own) || undefined,
+        }),
     };
 
     const surface =
@@ -93,8 +97,9 @@ export function FieldRoot({
                 {...rest}
                 {...data}
                 data-field=""
+                data-skin={skin.name}
                 style={surface}
-                className={context.classFor('root', className) || undefined}
+                {...context.slotProps('root', className)}
             >
                 {children}
             </div>
@@ -108,7 +113,7 @@ export interface FieldLabelProps extends ComponentPropsWithoutRef<'label'> {
 }
 
 export function FieldLabel({ children, className, requiredMark = '*', ...rest }: FieldLabelProps) {
-    const { view, controller, ids, data, classFor } = useFieldContext('FieldLabel');
+    const { view, controller, ids, data, slotProps } = useFieldContext('FieldLabel');
     const text = children ?? controller?.definition.label;
     if (!text) return null;
     return (
@@ -117,11 +122,11 @@ export function FieldLabel({ children, className, requiredMark = '*', ...rest }:
             htmlFor={ids.input}
             {...rest}
             {...data}
-            className={classFor('label', className) || undefined}
+            {...slotProps('label', className)}
         >
             {text}
             {view.required && (
-                <span {...data} aria-hidden className={classFor('requiredMark') || undefined}>
+                <span {...data} aria-hidden {...slotProps('requiredMark')}>
                     {requiredMark}
                 </span>
             )}
@@ -131,8 +136,8 @@ export function FieldLabel({ children, className, requiredMark = '*', ...rest }:
 
 /** The box around the input, adornments and indicator. Sizing applies here. */
 export function FieldControl({ className, ...rest }: ComponentPropsWithoutRef<'div'>) {
-    const { data, classFor } = useFieldContext('FieldControl');
-    return <div {...rest} {...data} className={classFor('control', className) || undefined} />;
+    const { data, slotProps } = useFieldContext('FieldControl');
+    return <div {...rest} {...data} {...slotProps('control', className)} />;
 }
 
 export interface FieldAdornmentProps extends ComponentPropsWithoutRef<'div'> {
@@ -140,13 +145,13 @@ export interface FieldAdornmentProps extends ComponentPropsWithoutRef<'div'> {
 }
 
 export function FieldAdornment({ side, className, ...rest }: FieldAdornmentProps) {
-    const { data, classFor } = useFieldContext('FieldAdornment');
+    const { data, slotProps } = useFieldContext('FieldAdornment');
     return (
         <div
             {...rest}
             {...data}
             data-side={side}
-            className={classFor('adornment', className) || undefined}
+            {...slotProps('adornment', className)}
         />
     );
 }
@@ -154,11 +159,11 @@ export function FieldAdornment({ side, className, ...rest }: FieldAdornmentProps
 const FALLBACK_ICONS = { valid: '✓', invalid: '✕' };
 
 export function FieldIndicator({ className, ...rest }: ComponentPropsWithoutRef<'div'>) {
-    const { view, skin, data, classFor } = useFieldContext('FieldIndicator');
+    const { view, skin, data, slotProps } = useFieldContext('FieldIndicator');
     if (!view.indicator) return null;
     const icon = skin.icons?.[view.indicator] ?? FALLBACK_ICONS[view.indicator];
     return (
-        <div {...rest} {...data} aria-hidden className={classFor('indicator', className) || undefined}>
+        <div {...rest} {...data} aria-hidden {...slotProps('indicator', className)}>
             {icon}
         </div>
     );
@@ -171,10 +176,10 @@ export function FieldIndicator({ className, ...rest }: ComponentPropsWithoutRef<
  * without touching the markup.
  */
 export function FieldHint({ className, ...rest }: ComponentPropsWithoutRef<'p'>) {
-    const { view, ids, data, classFor } = useFieldContext('FieldHint');
+    const { view, ids, data, slotProps } = useFieldContext('FieldHint');
     if (!view.hint) return null;
     return (
-        <p id={ids.hint} {...rest} {...data} className={classFor('hint', className) || undefined}>
+        <p id={ids.hint} {...rest} {...data} {...slotProps('hint', className)}>
             {view.hint}
         </p>
     );
@@ -182,14 +187,14 @@ export function FieldHint({ className, ...rest }: ComponentPropsWithoutRef<'p'>)
 
 /** Errors, and information about the answer so far. */
 export function FieldMessage({ className, ...rest }: ComponentPropsWithoutRef<'p'>) {
-    const { view, ids, data, classFor } = useFieldContext('FieldMessage');
+    const { view, ids, data, slotProps } = useFieldContext('FieldMessage');
     if (!view.message) return null;
     return (
         <p
             id={ids.message}
             {...rest}
             {...data}
-            className={classFor('message', className) || undefined}
+            {...slotProps('message', className)}
         >
             {view.message}
         </p>

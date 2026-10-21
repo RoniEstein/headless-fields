@@ -33,6 +33,8 @@ export interface FieldContextValue {
     skin: FieldSkin;
     /** Skin class + per-field class + the part's own className. */
     classFor: (slot: FieldSlot, own?: string) => string;
+    /** data-slot plus classFor's className, for spreading onto a part. */
+    slotProps: (slot: FieldSlot, own?: string) => { 'data-slot': FieldSlot; className: string | undefined };
 }
 
 export const FieldContext = createContext<FieldContextValue | null>(null);

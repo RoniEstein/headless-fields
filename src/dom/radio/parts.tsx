@@ -73,12 +73,12 @@ export function RadioGroup<T extends string>({ classNames, className, children, 
 /** The group's label. Not a <label>: it names the group, not one input. */
 export function RadioGroupLabel({ children, className, requiredMark = '*' }: { children: ReactNode; className?: string; requiredMark?: ReactNode }) {
     const group = useRadioGroupContext('RadioGroupLabel');
-    const { classFor } = useFieldContext('RadioGroupLabel');
+    const { slotProps } = useFieldContext('RadioGroupLabel');
     return (
-        <span {...group.getLabelProps()} className={classFor('label', className) || undefined}>
+        <span {...group.getLabelProps()} {...slotProps('label', className)}>
             {children}
             {group.view.required && (
-                <span {...group.data} aria-hidden className={classFor('requiredMark') || undefined}>
+                <span {...group.data} aria-hidden {...slotProps('requiredMark')}>
                     {requiredMark}
                 </span>
             )}
@@ -89,8 +89,8 @@ export function RadioGroupLabel({ children, className, requiredMark = '*' }: { c
 function Options(slot: FieldSlot, part: string) {
     return function OptionsPart({ children, className, render }: PartProps) {
         const group = useRadioGroupContext(part);
-        const { classFor } = useFieldContext(part);
-        const props = group.getGroupProps({ className: classFor(slot, className) || undefined, children });
+        const { slotProps } = useFieldContext(part);
+        const props = group.getGroupProps({ ...slotProps(slot, className), children });
         return renderPart('div', props, render, { checked: group.value !== '', disabled: group.disabled });
     };
 }
@@ -110,14 +110,14 @@ function Item(card: boolean) {
     const part = card ? 'RadioCard' : 'Radio';
     return function ItemPart({ value, disabled, children, className, render }: RadioItemProps) {
         const group = useRadioGroupContext(part);
-        const { classFor } = useFieldContext(part);
+        const { slotProps } = useFieldContext(part);
         const option = { value, disabled };
         const getter = card ? group.getCardProps : group.getItemProps;
         const props = getter(option, {
-            className: classFor(card ? 'radioCard' : 'radio', className) || undefined,
+            ...slotProps(card ? 'radioCard' : 'radio', className),
             children: (
                 <>
-                    <input {...group.getInputProps(option, { className: classFor(card ? 'radioCardInput' : 'radioInput') || undefined })} />
+                    <input {...group.getInputProps(option, { ...slotProps(card ? 'radioCardInput' : 'radioInput') })} />
                     {children}
                 </>
             ),
@@ -147,9 +147,9 @@ export const RadioCard = Item(true);
 export function RadioLabel({ children, className, render }: PartProps) {
     const group = useRadioGroupContext('RadioLabel');
     const { option, card } = useItem('RadioLabel');
-    const { classFor } = useFieldContext('RadioLabel');
+    const { slotProps } = useFieldContext('RadioLabel');
     const props = group.getOptionLabelProps(option, {
-        className: classFor(card ? 'radioCardLabel' : 'radioLabel', className) || undefined,
+        ...slotProps(card ? 'radioCardLabel' : 'radioLabel', className),
         children,
     });
     return renderPart('label', props, render, partState(group, option));
@@ -160,9 +160,9 @@ export function RadioLabel({ children, className, render }: PartProps) {
 export function RadioDescription({ children, className, render }: PartProps) {
     const group = useRadioGroupContext('RadioDescription');
     const { option, card } = useItem('RadioDescription');
-    const { classFor } = useFieldContext('RadioDescription');
+    const { slotProps } = useFieldContext('RadioDescription');
     const props: ElementProps = group.getDescriptionProps(option, {
-        className: classFor(card ? 'radioCardDescription' : 'radioDescription', className) || undefined,
+        ...slotProps(card ? 'radioCardDescription' : 'radioDescription', className),
         children,
     });
     return renderPart('div', props, render, partState(group, option));

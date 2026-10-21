@@ -53,6 +53,10 @@ export type MergeClasses = (...classes: ClassValue[]) => string;
  * skin never needs logic.
  */
 export interface FieldSkin {
+    /** Stamped on each field root as data-skin. The built-in default is
+     *  'default', which is what headless-fields/default.css styles; a skin
+     *  without a name turns that stylesheet off for its fields. */
+    name?: string;
     classNames?: FieldClassNames;
     icons?: Partial<Record<FieldIcon, ReactNode>>;
     /** Combines skin and per-field classes. Pass tailwind-merge (or the
@@ -63,7 +67,10 @@ export interface FieldSkin {
 export const joinClasses: MergeClasses = (...classes) =>
     classes.filter(Boolean).join(' ');
 
-const SkinContext = createContext<FieldSkin>({});
+/** What fields get with no provider: no classes, data-skin="default". */
+export const defaultSkin: FieldSkin = { name: 'default' };
+
+const SkinContext = createContext<FieldSkin>(defaultSkin);
 
 /** Merges `over` onto `base`, slot by slot. */
 export function extendSkin(base: FieldSkin, over: FieldSkin): FieldSkin {
@@ -74,6 +81,7 @@ export function extendSkin(base: FieldSkin, over: FieldSkin): FieldSkin {
         classNames[key] = merge(base.classNames?.[key], value);
     }
     return {
+        name: over.name ?? base.name,
         merge,
         classNames,
         icons: { ...base.icons, ...over.icons },
@@ -84,7 +92,7 @@ export function extendSkin(base: FieldSkin, over: FieldSkin): FieldSkin {
  * Provides the skin for every field below it. The nearest provider wins, so
  * a page, a section or a state (a dark hero, a compact table) can use its own
  * look. `extend` layers this skin over the inherited one instead of
- * replacing it.
+ * replacing it; extending the default keeps the default stylesheet on.
  */
 export function FieldSkinProvider({
     skin,
