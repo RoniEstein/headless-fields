@@ -163,6 +163,9 @@ describe('long text', () => {
         expect(feedback('hello')).toMatchObject({ tone: 'info', message: '5 of 10 characters' });
         expect(feedback('')).toMatchObject({ tone: null, message: '' });
     });
+    test('earns no valid mark: any text under the limit is fine', () => {
+        expect(notes.indicateValid).toBe(false);
+    });
     test('keeps text past the limit and says how far over it is', () => {
         expect(accept(notes, 'hello world!')).toBe('hello world!');
         expect(feedback('hello world')).toMatchObject({ status: 'invalid', tone: 'error', message: '1 character too many' });
