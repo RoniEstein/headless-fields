@@ -184,6 +184,26 @@ export const skin: FieldSkin = {
 <FieldSkinProvider skin={skin}>…</FieldSkinProvider>
 ```
 
+A floating label is a skin, not a different field. The label sits in the
+box while the field is empty and unfocused, then shrinks to the top edge;
+flex `order` puts the hint and message below the box:
+
+```ts
+export const floatingLabels: FieldSkin = {
+    classNames: {
+        root: 'relative flex flex-col',
+        label: 'pointer-events-none absolute top-3.5 left-4 z-10 text-sm transition-all data-filled:top-1.5 data-filled:text-xs data-focused:top-1.5 data-focused:text-xs',
+        control: 'order-1',
+        input: 'pt-6 pb-2 placeholder:text-transparent focus:placeholder:text-gray-500',
+        hint: 'order-2 mt-1.5 text-sm',
+        message: 'order-3 mt-1.5 text-sm',
+    },
+};
+```
+
+Layer it with `<FieldSkinProvider skin={floatingLabels} extend>`. The browser
+check (`bun run test:browser`) renders this pattern with the stock `Field`.
+
 Several themes at once:
 
 - **The nearest provider wins.** Wrap a page, a section, or a state (a dark

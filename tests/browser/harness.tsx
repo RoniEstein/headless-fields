@@ -1,7 +1,9 @@
 import { createRoot } from 'react-dom/client';
 import { useState } from 'react';
 import { files, MB } from '../../src/core';
+import { phone } from '../../src/definitions';
 import {
+    Field,
     FieldSkinProvider,
     FileDropField,
     FilePickerField,
@@ -93,6 +95,29 @@ function Plans() {
     );
 }
 
+// A floating label, made only of skin: the label sits in the box while it is
+// empty and unfocused, and shrinks to the top edge otherwise. The hint is
+// moved below the box with a flex order; the markup is the stock Field.
+const floating: FieldSkin = {
+    classNames: {
+        root: 'float',
+        label: 'float-label',
+        hint: 'float-hint',
+        control: 'float-control',
+        input: 'float-input',
+        message: 'float-message',
+    },
+};
+
+function Floating() {
+    const [value, setValue] = useState('');
+    return (
+        <FieldSkinProvider skin={floating}>
+            <Field id="floating" definition={phone} value={value} onChange={setValue} hint="Mobile preferred" />
+        </FieldSkinProvider>
+    );
+}
+
 createRoot(document.getElementById('root')!).render(
     <FieldSkinProvider skin={skin}>
         <form id="form" onSubmit={(e) => e.preventDefault()}>
@@ -103,6 +128,7 @@ createRoot(document.getElementById('root')!).render(
             <Decider />
             <button type="button" id="radio-after">after</button>
             <Plans />
+            <Floating />
         </form>
     </FieldSkinProvider>,
 );

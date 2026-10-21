@@ -161,6 +161,26 @@ check('a link inside a card does not choose it', await page.evaluate(() => docum
 const cardName = await page.locator('#plan-pro').evaluate((el) => [el.labels[0]?.textContent, el.getAttribute('aria-describedby')]);
 check('a card radio is named by its title only', cardName[0] === 'Pro' && !!cardName[1], JSON.stringify(cardName));
 
+// 8. A floating label is skin only: in the box while empty, small at the top once filled.
+const floatState = () =>
+    page.evaluate(() => {
+        const label = document.querySelector('#floating').closest('[data-field]').querySelector('label');
+        const box = document.getElementById('floating').getBoundingClientRect();
+        const at = label.getBoundingClientRect();
+        return { size: parseFloat(getComputedStyle(label).fontSize), inside: at.top >= box.top && at.bottom <= box.bottom, offset: Math.round(at.top - box.top) };
+    });
+const floatEmpty = await floatState();
+check('an empty floating label sits large inside the box', floatEmpty.size === 16 && floatEmpty.inside, JSON.stringify(floatEmpty));
+await page.locator('#floating').fill('204');
+await page.locator('#radio-after').focus();
+const filled = await floatState();
+check('a filled floating label shrinks to the top of the box', filled.size === 11 && filled.inside && filled.offset < floatEmpty.offset, JSON.stringify(filled));
+const hintBelow = await page.evaluate(() => {
+    const hint = document.getElementById('floating-hint').getBoundingClientRect();
+    return hint.top >= document.getElementById('floating').getBoundingClientRect().bottom;
+});
+check('the skin moves the hint below the box without new markup', hintBelow);
+
 check('no page errors', errors.length === 0, errors.join(' | '));
 await browser.close();
 server.close();
