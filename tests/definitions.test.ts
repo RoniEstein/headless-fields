@@ -63,6 +63,16 @@ describe('dates', () => {
         expect(accept(birthdate, '1980-01-02')).toBe('01021980');
         expect(birthdate.codec.toValue('01021980')).toBe('1980-01-02');
     });
+    test('a separator after one month or day digit finishes that part', () => {
+        expect(accept(birthdate, '4/')).toBe('04');
+        expect(accept(birthdate, '04 / 4/')).toBe('0404');
+        expect(accept(birthdate, '04 / 4-')).toBe('0404');
+        expect(accept(birthdate, '4/4/1992')).toBe('04041992');
+        expect(accept(birthdate, '0/')).toBe('0');
+        expect(accept(birthdate, '12 / 1')).toBe('121');
+        expect(accept(birthdate, '04 / 04 / 1/')).toBe('04041');
+    });
+
     test('describes the date as it is typed', () => {
         const result = resolveFeedback(birthdate, { raw: '0102', touched: false, required: false });
         expect(result).toMatchObject({ tone: 'info', message: 'January 2' });
@@ -95,6 +105,8 @@ describe('time', () => {
         expect(display(t, '0930')).toBe('09:30');
         expect(accept(t, '9')).toBe('09');
         expect(accept(t, '930')).toBe('0930');
+        expect(accept(t, '1:')).toBe('01');
+        expect(accept(t, '1.')).toBe('01');
         expect(t.codec.toValue('2130')).toBe('21:30');
         expect(t.codec.fromValue('09:30:00')).toBe('0930');
     });

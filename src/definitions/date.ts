@@ -6,13 +6,26 @@ const MONTHS = [
     'August', 'September', 'October', 'November', 'December',
 ];
 
-/** MM / DD / YYYY, typed as 8 digits. Accepts autofilled ISO and US dates. */
+/**
+ * MM / DD / YYYY, typed as 8 digits. Accepts autofilled ISO and US dates. A
+ * separator typed after a single month or day digit finishes that part, so
+ * "4/" is April and the next digit starts the day.
+ */
 export const monthDayYearMask: Mask = {
     accept(text) {
         const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
         if (iso) return iso[2].padStart(2, '0') + iso[3].padStart(2, '0') + iso[1];
         const us = text.match(/^(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})$/);
         if (us) return us[1].padStart(2, '0') + us[2].padStart(2, '0') + us[3];
+        // Only a separator just typed at the end pads; editing earlier in the
+        // box never reshuffles parts already entered.
+        const ended = text.match(/^(.*?)(\d)\s*[/.-]\s*$/);
+        if (ended) {
+            const before = ended[1].replace(/\D/g, '');
+            if ((before.length === 0 || before.length === 2) && ended[2] !== '0') {
+                return before + '0' + ended[2];
+            }
+        }
         return text.replace(/\D/g, '').slice(0, 8);
     },
     format(raw) {

@@ -3,7 +3,8 @@ import type { Codec, FieldDefinition, Mask, Rule } from '../core/types';
 
 /**
  * HH:MM on a 24-hour clock, typed as 4 digits. A first digit of 3–9 is an
- * hour on its own ("9" → "09"), and digits that cannot belong at their
+ * hour on its own ("9" → "09"), as is any digit followed by a colon ("1:"
+ * → "01"), and digits that cannot belong at their
  * position are dropped. A trailing a/p converts a 12-hour answer, so "930p",
  * "9 pm" and an autofilled "9:30 PM" all become 21:30.
  */
@@ -18,6 +19,8 @@ export const twentyFourHourMask: Mask = {
                 return String(converted).padStart(2, '0') + (twelve[2] ?? '00');
             }
         }
+        const hourOnly = text.match(/^\s*(\d)\s*[:.h]\s*$/i);
+        if (hourOnly) return '0' + hourOnly[1];
         let raw = '';
         for (const digit of text.replace(/\D/g, '')) {
             if (raw.length === 0) raw = digit <= '2' ? digit : '0' + digit;
