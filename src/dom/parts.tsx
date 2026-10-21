@@ -13,7 +13,7 @@ import { joinClasses, useFieldSkin, type FieldClassNames, type FieldSlot } from 
  * Unstyled parts. They render bare elements, wire ids and ARIA, and stamp
  * every element with the field's state as data attributes:
  *
- *   data-state="idle|valid|invalid"  data-tone="error|hint"
+ *   data-state="idle|valid|invalid"  data-tone="error|info"
  *   data-focused  data-touched  data-disabled  data-required
  *   data-sized (the answer has a known width)  data-has-start  data-has-end
  *   data-reserve-indicator  data-indicator="valid|invalid"
@@ -73,7 +73,7 @@ export function FieldRoot({
     const context = {
         view: field,
         controller: isController(field) ? field : undefined,
-        ids: { input: base, label: `${base}-label`, message: `${base}-message` },
+        ids: { input: base, label: `${base}-label`, hint: `${base}-hint`, message: `${base}-message` },
         disabled,
         data,
         skin,
@@ -163,6 +163,23 @@ export function FieldIndicator({ className, ...rest }: ComponentPropsWithoutRef<
     );
 }
 
+/**
+ * Help that stays visible while the user answers. Renders nothing without a
+ * hint. Its place on screen is the skin's choice: the templates render it
+ * after the label, and a skin can move it (a flex `order`, a grid area)
+ * without touching the markup.
+ */
+export function FieldHint({ className, ...rest }: ComponentPropsWithoutRef<'p'>) {
+    const { view, ids, data, classFor } = useFieldContext('FieldHint');
+    if (!view.hint) return null;
+    return (
+        <p id={ids.hint} {...rest} {...data} className={classFor('hint', className) || undefined}>
+            {view.hint}
+        </p>
+    );
+}
+
+/** Errors, and information about the answer so far. */
 export function FieldMessage({ className, ...rest }: ComponentPropsWithoutRef<'p'>) {
     const { view, ids, data, classFor } = useFieldContext('FieldMessage');
     if (!view.message) return null;

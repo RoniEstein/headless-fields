@@ -15,6 +15,7 @@ import {
     type FileSelection,
     type FileSelectionOptions,
 } from '../../react/useFileSelection';
+import { describedBy } from '../context';
 import { mergeProps, visuallyHidden, type ElementProps } from './props';
 
 export interface FileFieldOptions extends Omit<FileSelectionOptions<File>, 'describe'> {
@@ -27,6 +28,7 @@ export interface FileFieldOptions extends Omit<FileSelectionOptions<File>, 'desc
 export interface FileFieldIds {
     input: string;
     label: string;
+    hint: string;
     message: string;
     trigger: string;
 }
@@ -52,6 +54,7 @@ export interface FileField extends FileSelection<File> {
     getItemProps: (entry: FileEntry<File>, props?: ElementProps) => ElementProps;
     getRemoveProps: (entry: FileEntry<File>, props?: ElementProps) => ElementProps;
     getRejectionProps: (rejection: FileRejection<File>, props?: ElementProps) => ElementProps;
+    getHintProps: (props?: ElementProps) => ElementProps;
     getMessageProps: (props?: ElementProps) => ElementProps;
     getAnnouncerProps: (props?: ElementProps) => ElementProps;
 }
@@ -95,6 +98,7 @@ export function useFileField(definition: FilesDefinition, options: FileFieldOpti
     const ids: FileFieldIds = {
         input,
         label: `${input}-label`,
+        hint: `${input}-hint`,
         message: `${input}-message`,
         trigger: `${input}-trigger`,
     };
@@ -187,7 +191,7 @@ export function useFileField(definition: FilesDefinition, options: FileFieldOpti
                     required: selection.view.required,
                     disabled: selection.disabled,
                     'aria-labelledby': `${ids.label} ${ids.trigger}`,
-                    'aria-describedby': selection.view.message ? ids.message : undefined,
+                    'aria-describedby': describedBy(selection.view, ids),
                     'aria-invalid': selection.view.status === 'invalid' || undefined,
                     style: visuallyHidden,
                     onChange: (event: ChangeEvent<HTMLInputElement>) => {
@@ -255,6 +259,7 @@ export function useFileField(definition: FilesDefinition, options: FileFieldOpti
             ),
         getRejectionProps: (rejection, props) =>
             mergeProps({ ...data, 'data-error-code': rejection.code }, props),
+        getHintProps: (props) => mergeProps({ ...data, id: ids.hint }, props),
         getMessageProps: (props) =>
             mergeProps({ ...data, id: ids.message, 'data-tone': selection.view.tone ?? undefined }, props),
         getAnnouncerProps: (props) =>

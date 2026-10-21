@@ -78,6 +78,16 @@ describe('RadioGroupField', () => {
         expect(group.getAttribute('aria-describedby')).toBe(screen.getByText('Choose an option').id);
     });
 
+    test('the group hint stays beside an error and both describe the group', () => {
+        render(
+            <RadioGroupField label="Decides?" options={yesNo} value="" onChange={() => {}} hint="Pick the closest" serverError="Choose one" />,
+        );
+        const group = screen.getByRole('radiogroup');
+        const hint = screen.getByText('Pick the closest');
+        expect(hint.id).toBeTruthy();
+        expect(group.getAttribute('aria-describedby')).toBe(`${hint.id} ${screen.getByText('Choose one').id}`);
+    });
+
     test('a server error shows at once; option descriptions describe their radio', () => {
         render(
             <RadioGroupField

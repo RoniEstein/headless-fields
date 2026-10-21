@@ -23,8 +23,8 @@ describe('feedback policy', () => {
         expect(result).toMatchObject({ status: 'invalid', tone: 'error', message: 'Area code must start with 2–9' });
     });
 
-    test('a blur issue is a hint while typing and an error after blur', () => {
-        expect(feedback(phone, { raw: '204' })).toMatchObject({ status: 'idle', tone: 'hint', message: '3 of 10 digits' });
+    test('a blur issue is information while typing and an error after blur', () => {
+        expect(feedback(phone, { raw: '204' })).toMatchObject({ status: 'idle', tone: 'info', message: '3 of 10 digits' });
         expect(feedback(phone, { raw: '204', touched: true })).toMatchObject({ status: 'invalid', tone: 'error' });
     });
 
@@ -42,7 +42,7 @@ describe('feedback policy', () => {
     test('the required message waits for blur unless asked for', () => {
         expect(feedback(email, { raw: '', required: true })).toMatchObject({ tone: null });
         expect(feedback(email, { raw: '', required: true, showRequiredHint: true })).toMatchObject({
-            tone: 'hint',
+            tone: 'info',
             message: 'Email is required',
         });
         expect(feedback(email, { raw: '', required: true, touched: true })).toMatchObject({
@@ -53,10 +53,6 @@ describe('feedback policy', () => {
 
     test('a field without a required message stays quiet when empty', () => {
         expect(feedback(phone, { raw: '', required: true, touched: true })).toMatchObject({ status: 'idle', tone: null });
-    });
-
-    test('the static hint shows when there is nothing else to say', () => {
-        expect(feedback(phone, { raw: '', hint: 'Mobile preferred' })).toMatchObject({ tone: 'hint', message: 'Mobile preferred' });
     });
 });
 

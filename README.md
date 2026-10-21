@@ -58,12 +58,20 @@ the base and the rules are data:
 
 1. A server error always wins.
 2. An `immediate` issue is an error at once (a bad area code).
-3. A `blur` issue is a hint while the user types ("3 of 10 digits") and
-   becomes an error once they leave the field. Refocusing turns it back into
-   a hint.
-4. Otherwise the definition's description ("January 2, 1980"), then the
-   static `hint`.
+3. A `blur` issue is information while the user types ("3 of 10 digits")
+   and becomes an error once they leave the field. Refocusing turns it back
+   into information.
+4. Otherwise the definition's description of the answer ("January 2, 1980").
 5. Valid means non-empty, complete and issue-free.
+
+The **hint** is not part of this policy. It is help that stays visible while
+the user answers ("For example, Training room"), in its own part
+(`FieldHint`), and a message never replaces it. Both are linked to the input
+with `aria-describedby`, hint first. `hint` is a string, or on text fields a
+function of the text typed so far for help that follows the answer:
+`` hint={(raw) => `${raw.length} of 500 characters`} ``. Help that only
+depends on other state (a province) needs no function: pass a different
+string and the field re-renders.
 
 ### Three values
 
@@ -146,13 +154,17 @@ comes from data attributes on every part, so a skin needs no logic:
 | Attribute | Values |
 |---|---|
 | `data-state` | `idle`, `valid`, `invalid` |
-| `data-tone` | `error`, `hint` (on every part; meant for the message) |
+| `data-tone` | `error`, `info` (on every part; meant for the message) |
 | `data-focused`, `data-touched`, `data-disabled`, `data-required` | present or absent |
 | `data-indicator` | `valid`, `invalid` (the icon being shown) |
 | `data-sized`, `data-has-start`, `data-has-end`, `data-reserve-indicator` | present or absent |
 
-Slots: `root`, `label`, `requiredMark`, `control`, `input`, `adornment`
-(with `data-side="start|end"`), `indicator`, `message`.
+Slots: `root`, `label`, `requiredMark`, `hint`, `control`, `input`,
+`adornment` (with `data-side="start|end"`), `indicator`, `message`.
+
+The templates render the hint right after the label. Where it shows is the
+skin's call: make the root `flex flex-col` and give `hint` an `order` to
+move it below the box, without touching the markup.
 
 ```tsx
 import { FieldSkinProvider, type FieldSkin } from 'headless-fields/dom';
@@ -163,7 +175,8 @@ export const skin: FieldSkin = {
     classNames: {
         label: 'mb-1.5 block text-sm font-medium text-body',
         input: 'w-full rounded-lg border px-4 py-2.5 data-[state=invalid]:border-red-300',
-        message: 'mt-1.5 text-sm data-[tone=error]:text-red-600 data-[tone=hint]:text-accent',
+        hint: 'mb-1.5 text-sm text-body-muted',
+        message: 'mt-1.5 text-sm data-[tone=error]:text-red-600 data-[tone=info]:text-accent',
     },
     icons: { valid: <CheckCircle />, invalid: <XCircle /> },
 };
@@ -200,6 +213,7 @@ const field = useField(phone, { value, onChange });
 
 <FieldRoot field={field} hasStart>
     <FieldLabel />
+    <FieldHint />
     <FieldControl>
         <FieldAdornment side="start"><PhoneIcon /></FieldAdornment>
         <FieldInput validateOnSubmit />
@@ -337,6 +351,7 @@ const f = useFileField(artwork, { value, onChange: setValue, required, serverErr
         ))}
     </ul>
     {f.rejections.map((r) => <p key={r.file.name} {...f.getRejectionProps(r)}>{r.message}</p>)}
+    {f.view.hint && <p {...f.getHintProps()}>{f.view.hint}</p>}
     <p {...f.getMessageProps()}>{f.view.message}</p>
     <div {...f.getAnnouncerProps()}>{f.announcement}</div>
 </div>
@@ -351,7 +366,7 @@ const f = useFileField(artwork, { value, onChange: setValue, required, serverErr
 | `getItemProps(entry)` | `data-kind`, `data-file-id` |
 | `getRemoveProps(entry)` | `type=button`, "Remove name" label, removal with focus moving to the next file or the input |
 | `getRejectionProps(r)` | `data-error-code` |
-| `getMessageProps` / `getAnnouncerProps` | message id and tone; a polite, visually hidden live region |
+| `getHintProps` / `getMessageProps` / `getAnnouncerProps` | hint id; message id and tone; a polite, visually hidden live region |
 
 Every getter takes your props and merges them: your handlers run first, and
 `event.preventDefault()` skips ours. Skip a getter and you skip what it
@@ -364,7 +379,7 @@ images.
 
 Slots: `trigger`, `dropArea`, `dropHint`, `fileSummary`, `fileList`,
 `fileItem`, `filePreview`, `fileName`, `fileSize`, `fileRemove`,
-`fileRejections`, `fileRejection`, plus the shared `label` and `message`.
+`fileRejections`, `fileRejection`, plus the shared `label`, `hint` and `message`.
 Icons: `upload` (in triggers), `remove`, `file` (rows without an image).
 
 State attributes on every file part: `data-state`, `data-disabled`,
@@ -444,6 +459,7 @@ group unanswered), `serverError` (always shown), `hint`, `disabled`, `name`
 ```tsx
 <RadioGroup value={plan} onChange={setPlan} name="plan">
     <RadioGroupLabel>Plan</RadioGroupLabel>
+    <FieldHint />
     <RadioCards render={<section />}>
         <RadioCard value="pro" render={(props, { checked }) => <article {...props} />}>
             <RadioLabel>Pro</RadioLabel>
@@ -474,6 +490,7 @@ const g = useRadioGroup({ value, onChange, required });
             <div {...g.getDescriptionProps(s)}>{s.details}</div>
         </div>
     ))}
+    {g.view.hint && <p {...g.getHintProps()}>{g.view.hint}</p>}
     {g.view.message && <p {...g.getMessageProps()}>{g.view.message}</p>}
 </fieldset>
 ```
@@ -488,7 +505,7 @@ Native or a custom control.
 Plain: `radioOptions`, `radio`, `radioInput`, `radioLabel`,
 `radioDescription`. Cards: `radioCards`, `radioCard`, `radioCardInput`,
 `radioCardLabel`, `radioCardDescription`. Plus the shared `label`,
-`requiredMark` and `message`. Every part carries `data-state`, `data-tone`,
+`requiredMark`, `hint` and `message`. Every part carries `data-state`, `data-tone`,
 `data-touched`, `data-required`; options add `data-checked` and
 `data-disabled`. Style focus with `has-[:focus-visible]`.
 

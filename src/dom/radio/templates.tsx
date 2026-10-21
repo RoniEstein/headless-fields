@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { FieldMessage } from '../parts';
+import { FieldHint, FieldMessage } from '../parts';
 import {
     Radio,
     RadioCard,
@@ -42,6 +42,7 @@ export function RadioGroupField<T extends string>({ label, options, children, ..
     return (
         <RadioGroup<T> {...group}>
             {label && <RadioGroupLabel>{label}</RadioGroupLabel>}
+            <FieldHint />
             <RadioOptions>
                 {options.map((option) => (
                     <Radio key={option.value} value={option.value} disabled={option.disabled}>
@@ -67,6 +68,7 @@ export function RadioCardsField<T extends string>({ label, options, renderOption
     return (
         <RadioGroup<T> {...group}>
             {label && <RadioGroupLabel>{label}</RadioGroupLabel>}
+            <FieldHint />
             <RadioCards>
                 {options.map((option) => (
                     <RadioCard key={option.value} value={option.value} disabled={option.disabled}>

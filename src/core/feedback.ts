@@ -51,18 +51,21 @@ export interface FeedbackContext {
     required: boolean;
     /** An error from outside the field (a failed submit). Always shown. */
     serverError?: string;
-    /** Static helper text, shown when the field has nothing else to say. */
-    hint?: string;
-    /** Show the required message as a hint before the user touches the
+    /** Show the required message before the user touches the
      *  field. Off by default: an untouched form should not look broken. */
     showRequiredHint?: boolean;
 }
 
 export type FieldStatus = 'idle' | 'valid' | 'invalid';
 
+/** An error, or information about the answer so far ("3 of 10 digits",
+ *  "January 2, 1980"). Help text that stays put is the field's hint, a
+ *  separate part with its own slot. */
+export type MessageTone = 'error' | 'info';
+
 export interface Feedback {
     status: FieldStatus;
-    tone: 'error' | 'hint' | null;
+    tone: MessageTone | null;
     message: string;
     issue: Issue | null;
     complete: boolean;
@@ -73,16 +76,18 @@ export interface Feedback {
  *   1. A server error always wins.
  *   2. An immediate issue is an error straight away; a blur issue becomes an
  *      error once the user leaves the field.
- *   3. A blur issue that is not an error yet is shown as a hint while the
- *      user is typing (never on an untouched, empty field unless asked).
- *   4. Otherwise the definition's description, then the static hint.
+ *   3. A blur issue that is not an error yet is shown as information while
+ *      the user is typing (never on an untouched, empty field unless asked).
+ *   4. Otherwise the definition's description of the answer, if any.
  *   5. Valid means non-empty, complete and issue-free.
+ * The static hint is not part of this: it has its own part and never gives
+ * way to a message.
  */
 export function resolveFeedback<V>(
     definition: FieldDefinition<V>,
     context: FeedbackContext,
 ): Feedback {
-    const { raw, touched, required, serverError, hint } = context;
+    const { raw, touched, required, serverError } = context;
     const { issue, complete } = evaluate(definition, raw, required);
     const base = { issue, complete };
 
@@ -97,10 +102,9 @@ export function resolveFeedback<V>(
         raw !== '' && !issue && complete ? 'valid' : 'idle';
 
     if (issue && (raw !== '' || (issue.required && context.showRequiredHint))) {
-        return { ...base, status, tone: 'hint', message: issue.message };
+        return { ...base, status, tone: 'info', message: issue.message };
     }
 
-    const description = !issue && raw !== '' ? definition.describe?.(raw) : '';
-    const message = description || hint || '';
-    return { ...base, status, tone: message ? 'hint' : null, message };
+    const message = (!issue && raw !== '' && definition.describe?.(raw)) || '';
+    return { ...base, status, tone: message ? 'info' : null, message };
 }

@@ -102,6 +102,17 @@ describe('FilePickerField', () => {
         expect(screen.getByText('Choose a file').getAttribute('data-tone')).toBe('error');
         expect(input.getAttribute('aria-invalid')).toBe('true');
     });
+
+    test('the hint stays beside a required error and both describe the input', () => {
+        render(<FilePickerField definition={artwork} label="Artwork" value={[]} onChange={() => {}} required hint="PNG or PDF, up to 10 MB" />);
+        const input = screen.getByLabelText(/Artwork/);
+        const hint = screen.getByText('PNG or PDF, up to 10 MB');
+        expect(input.getAttribute('aria-describedby')).toBe(hint.id);
+        fireEvent.blur(input);
+        const error = screen.getByText('Choose a file');
+        expect(screen.getByText('PNG or PDF, up to 10 MB')).toBe(hint);
+        expect(input.getAttribute('aria-describedby')).toBe(`${hint.id} ${error.id}`);
+    });
 });
 
 describe('FileDropField', () => {

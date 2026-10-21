@@ -5,6 +5,7 @@ export type FieldSlot =
     | 'root'
     | 'label'
     | 'requiredMark'
+    | 'hint'
     | 'control'
     | 'input'
     | 'adornment'

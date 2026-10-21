@@ -65,7 +65,7 @@ describe('dates', () => {
     });
     test('describes the date as it is typed', () => {
         const result = resolveFeedback(birthdate, { raw: '0102', touched: false, required: false });
-        expect(result).toMatchObject({ tone: 'hint', message: 'January 2' });
+        expect(result).toMatchObject({ tone: 'info', message: 'January 2' });
     });
     test('catches impossible parts early', () => {
         expect(issue(birthdate, '13')).toBe('Invalid month');

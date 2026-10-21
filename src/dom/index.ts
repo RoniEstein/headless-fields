@@ -3,6 +3,7 @@ export type { FieldProps } from './Field';
 export {
     FieldAdornment,
     FieldControl,
+    FieldHint,
     FieldIndicator,
     FieldLabel,
     FieldMessage,
@@ -25,7 +26,7 @@ export type {
     FieldSlot,
     MergeClasses,
 } from './skin';
-export { FieldContext, useFieldContext } from './context';
+export { describedBy, FieldContext, useFieldContext } from './context';
 export type { FieldContextValue, FieldIds } from './context';
 
 // File fields: behaviour (useFileField), parts, and two starter templates.

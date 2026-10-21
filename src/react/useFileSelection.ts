@@ -45,7 +45,8 @@ export interface FileSelectionOptions<H> {
     disabled?: boolean;
     /** An error from outside the field (a failed submit). Always shown. */
     serverError?: string;
-    /** Helper text, shown when the field has nothing else to say. */
+    /** Help that stays visible ("PNG or PDF, up to 10 MB"). Errors show in
+     *  the message and never replace it. */
     hint?: string;
     strings?: Partial<FileStrings>;
 }
@@ -121,7 +122,7 @@ export function useFileSelection<H>(
     }
 
     const missing = required && touched && value.length === 0;
-    const message = options.serverError || (missing ? definition.requiredMessage : '') || options.hint || '';
+    const message = options.serverError || (missing ? definition.requiredMessage : '') || '';
     const invalid = !!options.serverError || missing;
 
     return {
@@ -132,8 +133,9 @@ export function useFileSelection<H>(
         summary: value.length === 0 ? strings.empty(definition.maxFiles) : strings.chosen(entries.map((e) => e.name)),
         view: {
             status: invalid ? 'invalid' : value.length > 0 ? 'valid' : 'idle',
+            hint: options.hint ?? '',
             message,
-            tone: invalid ? 'error' : message ? 'hint' : null,
+            tone: message ? 'error' : null,
             indicator: null,
             reservesIndicator: false,
             focused: false,

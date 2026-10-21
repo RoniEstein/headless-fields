@@ -9,7 +9,8 @@ export interface ChoiceOptions<T extends string> {
     disabled?: boolean;
     /** An error from outside the field (a failed submit). Always shown. */
     serverError?: string;
-    /** Helper text, shown when the field has nothing else to say. */
+    /** Help that stays visible while the user chooses. Errors show in the
+     *  message and never replace it. */
     hint?: string;
     /** Shown once a required field is left without a choice. */
     requiredMessage?: string;
@@ -40,7 +41,7 @@ export function useChoice<T extends string>(options: ChoiceOptions<T>): Choice<T
 
     const missing = required && touched && value === '';
     const requiredMessage = options.requiredMessage ?? 'Choose an option';
-    const message = options.serverError || (missing ? requiredMessage : '') || options.hint || '';
+    const message = options.serverError || (missing ? requiredMessage : '');
     const invalid = !!options.serverError || missing;
     const status = invalid ? 'invalid' : value !== '' ? 'valid' : 'idle';
     const showValid = options.showValidIndicator ?? false;
@@ -49,8 +50,9 @@ export function useChoice<T extends string>(options: ChoiceOptions<T>): Choice<T
         value,
         view: {
             status,
+            hint: options.hint ?? '',
             message,
-            tone: invalid ? 'error' : message ? 'hint' : null,
+            tone: message ? 'error' : null,
             indicator: status === 'invalid' ? 'invalid' : status === 'valid' && showValid ? 'valid' : null,
             reservesIndicator: false,
             focused: false,

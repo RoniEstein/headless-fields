@@ -1,16 +1,19 @@
-import type { FieldStatus } from '../core/feedback';
+import type { FieldStatus, MessageTone } from '../core/feedback';
 
 export type Indicator = 'valid' | 'invalid' | null;
 
 /**
- * What a renderer needs to draw a field's frame (label, message, indicator,
- * state attributes). Text fields get it from useField; choice controls
+ * What a renderer needs to draw a field's frame (label, hint, message,
+ * indicator, state attributes). Text fields get it from useField; choice controls
  * (checkbox, radio, select) build it with staticField.
  */
 export interface FieldView {
     status: FieldStatus;
+    /** Help that stays put while the user answers; '' for none. */
+    hint: string;
+    /** An error or information about the answer; '' for none. */
     message: string;
-    tone: 'error' | 'hint' | null;
+    tone: MessageTone | null;
     indicator: Indicator;
     /** The renderer keeps room for an indicator icon. */
     reservesIndicator: boolean;
@@ -32,17 +35,20 @@ export interface StaticFieldOptions {
 }
 
 /** A frame for controls whose behaviour lives elsewhere (Radix checkbox,
- *  radio group, select): the page supplies error, hint and validity. */
+ *  radio group, select): the page supplies error, hint and validity. The
+ *  hint is a string: these controls have no typed answer to pass to a
+ *  function. */
 export function staticField(options: StaticFieldOptions = {}): FieldView {
     const invalid = options.invalid ?? !!options.error;
     const status: FieldStatus = invalid ? 'invalid' : options.valid ? 'valid' : 'idle';
-    const message = options.error || options.hint || '';
+    const message = options.error || '';
     const showInvalid = options.showInvalidIndicator ?? true;
     const showValid = options.showValidIndicator ?? true;
     return {
         status,
+        hint: options.hint ?? '',
         message,
-        tone: options.error ? 'error' : message ? 'hint' : null,
+        tone: message ? 'error' : null,
         indicator:
             status === 'invalid' && showInvalid
                 ? 'invalid'
