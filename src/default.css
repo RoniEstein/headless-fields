@@ -1,0 +1,240 @@
+/*
+ * headless-fields default look. Import once:
+ *
+ *     import 'headless-fields/default.css';
+ *
+ * It styles only fields rendered with the default skin (no FieldSkinProvider,
+ * or a provider that extends the default), found by data-skin="default" on
+ * the field root and data-slot on each part. A provider with its own skin
+ * turns it off for its fields. Everything sits in @layer headless-fields
+ * with zero-specificity :where() selectors, so any of your own CSS wins.
+ *
+ * Theme it with the custom properties below, on :root or any ancestor.
+ */
+@layer headless-fields {
+    :where([data-skin='default']) {
+        --hf-font-size: 0.875rem;
+        --hf-text: #111827;
+        --hf-muted: #4b5563;
+        /* 4.8:1 on white: lighter than an answer, still readable. */
+        --hf-placeholder: #6b7280;
+        --hf-border: #d1d5db;
+        --hf-surface: #ffffff;
+        --hf-accent: #2563eb;
+        --hf-focus-ring: rgb(37 99 235 / 0.25);
+        --hf-error: #b91c1c;
+        --hf-error-border: #f87171;
+        --hf-valid: #15803d;
+        --hf-radius: 0.5rem;
+        /* Padding and border around the typed text, for sized fields. */
+        --hf-chrome: calc(1.5rem + 2px);
+
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        font-size: var(--hf-font-size);
+        color: var(--hf-text);
+    }
+
+    /* Label, hint, message */
+    :where([data-skin='default'] [data-slot='label']) {
+        font-weight: 500;
+        line-height: 1.25rem;
+    }
+    :where([data-skin='default'] [data-slot='requiredMark']) {
+        margin-left: 0.125rem;
+        color: var(--hf-error);
+    }
+    :where([data-skin='default'] [data-slot='hint']) {
+        margin: 0;
+        color: var(--hf-muted);
+        line-height: 1.25rem;
+    }
+    :where([data-skin='default'] [data-slot='message']) {
+        margin: 0;
+        line-height: 1.25rem;
+        color: var(--hf-muted);
+    }
+    :where([data-skin='default'] [data-slot='message'][data-tone='error']) {
+        color: var(--hf-error);
+        font-weight: 500;
+    }
+
+    /* The box: control, input, adornments, indicator */
+    :where([data-skin='default'] [data-slot='control']) {
+        position: relative;
+        display: flex;
+        align-items: center;
+        max-width: 100%;
+    }
+    :where([data-skin='default'][data-sized] [data-slot='control']) {
+        width: calc(var(--field-chars) * 1ch + var(--hf-chrome));
+    }
+    :where([data-skin='default'] [data-slot='input']) {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 2.5rem;
+        padding: 0.5rem 0.75rem;
+        font: inherit;
+        color: var(--hf-text);
+        background: var(--hf-surface);
+        border: 1px solid var(--hf-border);
+        border-radius: var(--hf-radius);
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    :where([data-skin='default'][data-reserve-indicator]) {
+        --hf-chrome: calc(3rem + 2px);
+    }
+    :where([data-skin='default'][data-reserve-indicator] [data-slot='input']) {
+        padding-right: 2.25rem;
+    }
+    :where([data-skin='default'] [data-slot='input'])::placeholder {
+        color: var(--hf-placeholder);
+        opacity: 1;
+    }
+    :where([data-skin='default'] [data-slot='input']:focus) {
+        border-color: var(--hf-accent);
+        box-shadow: 0 0 0 3px var(--hf-focus-ring);
+    }
+    :where([data-skin='default'] [data-slot='input'][data-state='invalid']) {
+        border-color: var(--hf-error-border);
+    }
+    :where([data-skin='default'] [data-slot='input']:disabled) {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    :where([data-skin='default'] [data-slot='adornment']) {
+        padding: 0 0.5rem;
+        color: var(--hf-muted);
+    }
+    :where([data-skin='default'] [data-slot='indicator']) {
+        position: absolute;
+        right: 0.75rem;
+        pointer-events: none;
+        font-weight: 600;
+    }
+    :where([data-skin='default'] [data-slot='control']:has(textarea) [data-slot='indicator']) {
+        top: 0.625rem;
+    }
+    :where([data-skin='default'] [data-slot='indicator'][data-indicator='valid']) {
+        color: var(--hf-valid);
+    }
+    :where([data-skin='default'] [data-slot='indicator'][data-indicator='invalid']) {
+        color: var(--hf-error);
+    }
+
+    /* Radio groups */
+    :where([data-skin='default'] :is([data-slot='radioOptions'], [data-slot='radioCards'])) {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    :where([data-skin='default'] :is([data-slot='radio'], [data-slot='radioCard'])) {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 0.5rem;
+        align-items: start;
+    }
+    :where([data-skin='default'] [data-slot='radioCard']) {
+        padding: 0.75rem;
+        background: var(--hf-surface);
+        border: 1px solid var(--hf-border);
+        border-radius: var(--hf-radius);
+        cursor: pointer;
+    }
+    :where([data-skin='default'] [data-slot='radioCard'][data-checked]) {
+        border-color: var(--hf-accent);
+        box-shadow: 0 0 0 1px var(--hf-accent);
+    }
+    :where([data-skin='default'] :is([data-slot='radioInput'], [data-slot='radioCardInput'])) {
+        margin: 0.125rem 0 0;
+        accent-color: var(--hf-accent);
+    }
+    :where([data-skin='default'] :is([data-slot='radioDescription'], [data-slot='radioCardDescription'])) {
+        grid-column: 2;
+        color: var(--hf-muted);
+    }
+    :where([data-skin='default'] [data-slot='radioCard']:has(:focus-visible)) {
+        box-shadow: 0 0 0 3px var(--hf-focus-ring);
+    }
+
+    /* File fields */
+    :where([data-skin='default'] [data-slot='trigger']) {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 2.5rem;
+        padding: 0 1rem;
+        font-weight: 500;
+        background: var(--hf-surface);
+        border: 1px solid var(--hf-border);
+        border-radius: var(--hf-radius);
+        cursor: pointer;
+    }
+    :where([data-skin='default'] [data-slot='trigger']:has(:focus-visible)) {
+        border-color: var(--hf-accent);
+        box-shadow: 0 0 0 3px var(--hf-focus-ring);
+    }
+    :where([data-skin='default'] [data-slot='dropArea']) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.25rem;
+        border: 2px dashed var(--hf-border);
+        border-radius: var(--hf-radius);
+    }
+    :where([data-skin='default'] [data-slot='dropArea'][data-dragging]) {
+        border-color: var(--hf-accent);
+    }
+    :where([data-skin='default'] [data-slot='dropArea'][data-drag-reject]) {
+        border-color: var(--hf-error-border);
+    }
+    :where([data-skin='default'] :is([data-slot='dropHint'], [data-slot='fileSummary'], [data-slot='fileSize'])) {
+        color: var(--hf-muted);
+    }
+    :where([data-skin='default'] :is([data-slot='fileList'], [data-slot='fileRejections'])) {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    :where([data-skin='default'] [data-slot='fileItem']) {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--hf-border);
+        border-radius: var(--hf-radius);
+    }
+    :where([data-skin='default'] [data-slot='filePreview']) {
+        width: 2.5rem;
+        height: 2.5rem;
+        object-fit: cover;
+        border-radius: 0.25rem;
+    }
+    :where([data-skin='default'] [data-slot='fileName']) {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 500;
+    }
+    :where([data-skin='default'] [data-slot='fileRemove']) {
+        margin-left: auto;
+        padding: 0.25rem 0.5rem;
+        font: inherit;
+        color: var(--hf-muted);
+        background: none;
+        border: 0;
+        border-radius: 0.25rem;
+        cursor: pointer;
+    }
+    :where([data-skin='default'] [data-slot='fileRejection']) {
+        color: var(--hf-error);
+        font-weight: 500;
+    }
+}

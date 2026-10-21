@@ -15,6 +15,7 @@ const here = new URL('.', import.meta.url).pathname;
 const out = mkdtempSync(join(tmpdir(), 'headless-fields-browser-'));
 execFileSync('bun', ['build', join(here, 'harness.tsx'), '--outdir', out, '--target', 'browser'], { stdio: 'inherit' });
 copyFileSync(join(here, 'index.html'), join(out, 'index.html'));
+copyFileSync(join(here, '../../src/default.css'), join(out, 'default.css'));
 
 const failures = [];
 function check(name, ok, detail = '') {
@@ -31,7 +32,8 @@ const server = createServer((req, res) => {
     const file = req.url === '/' ? 'index.html' : req.url.slice(1);
     try {
         const body = readFileSync(join(out, file));
-        res.writeHead(200, { 'content-type': file.endsWith('.js') ? 'text/javascript' : 'text/html' });
+        const type = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
+        res.writeHead(200, { 'content-type': type });
         res.end(body);
     } catch {
         res.writeHead(404).end();
@@ -180,6 +182,32 @@ const hintBelow = await page.evaluate(() => {
     return hint.top >= document.getElementById('floating').getBoundingClientRect().bottom;
 });
 check('the skin moves the hint below the box without new markup', hintBelow);
+
+// 9. default.css styles fields without a provider, and only those.
+const looks = await page.evaluate(() => {
+    const style = (el) => getComputedStyle(el);
+    return {
+        defaultRadius: style(document.getElementById('d-phone')).borderRadius,
+        skinnedRadius: style(document.getElementById('floating')).borderRadius,
+        hintColor: style(document.getElementById('d-phone-hint')).color,
+        skin: document.getElementById('d-phone').closest('[data-field]').getAttribute('data-skin'),
+        skinnedSkin: document.getElementById('floating').closest('[data-field]').getAttribute('data-skin'),
+    };
+});
+check('default.css styles a field with no provider', looks.defaultRadius === '8px' && looks.skin === 'default' && looks.hintColor === 'rgb(75, 85, 99)', JSON.stringify(looks));
+check('a provider skin turns default.css off', looks.skinnedRadius === '0px' && looks.skinnedSkin === null, JSON.stringify(looks));
+await page.locator('#d-phone').fill('20455');
+await page.locator('#d-date').fill('2/');
+await page.locator('#d-date').press('End');
+await page.locator('#d-date').type('29');
+await page.locator('#d-date').type('2023');
+await page.locator('#d-room').fill('Training room');
+await page.locator('#d-notes').fill('Ring the side door bell');
+await page.locator('#d-contact-phone').check();
+await page.locator('#radio-after').focus();
+const dateText = await page.locator('#d-date').inputValue();
+check('typing 2/ moves on to the day', dateText === '02 / 29 / 2023', JSON.stringify(dateText));
+if (process.env.SHOT) await page.locator('#defaults').screenshot({ path: process.env.SHOT });
 
 check('no page errors', errors.length === 0, errors.join(' | '));
 await browser.close();
