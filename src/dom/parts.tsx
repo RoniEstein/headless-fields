@@ -14,7 +14,7 @@ import { joinClasses, useFieldSkin, type FieldClassNames, type FieldSlot } from 
  * every element with the field's state as data attributes:
  *
  *   data-state="idle|valid|invalid"  data-tone="error|info"
- *   data-focused  data-touched  data-disabled  data-required
+ *   data-focused  data-touched  data-disabled  data-required  data-filled
  *   data-sized (the answer has a known width)  data-has-start  data-has-end
  *   data-reserve-indicator  data-indicator="valid|invalid"
  *
@@ -63,6 +63,7 @@ export function FieldRoot({
         'data-touched': flag(field.touched),
         'data-disabled': flag(disabled),
         'data-required': flag(field.required),
+        'data-filled': flag(field.filled),
         'data-sized': flag(field.chars !== undefined),
         'data-has-start': flag(hasStart),
         'data-has-end': flag(hasEnd),

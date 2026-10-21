@@ -20,6 +20,8 @@ export interface FieldView {
     focused: boolean;
     touched: boolean;
     required: boolean;
+    /** The field holds an answer (typed text, a choice, a file). */
+    filled: boolean;
     /** Typing surface in characters, if the answer has a known width. */
     chars?: number;
 }
@@ -28,6 +30,8 @@ export interface StaticFieldOptions {
     error?: string;
     hint?: string;
     required?: boolean;
+    /** The control holds an answer; drives data-filled. */
+    filled?: boolean;
     valid?: boolean;
     invalid?: boolean;
     showValidIndicator?: boolean;
@@ -59,5 +63,6 @@ export function staticField(options: StaticFieldOptions = {}): FieldView {
         focused: false,
         touched: false,
         required: options.required ?? false,
+        filled: options.filled ?? false,
     };
 }

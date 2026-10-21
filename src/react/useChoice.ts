@@ -58,6 +58,7 @@ export function useChoice<T extends string>(options: ChoiceOptions<T>): Choice<T
             focused: false,
             touched,
             required,
+            filled: value !== '',
         },
         disabled,
         select: (next) => {

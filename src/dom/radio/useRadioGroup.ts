@@ -100,6 +100,7 @@ export function useRadioGroup<T extends string>(options: RadioGroupOptions<T>): 
         'data-touched': flag(view.touched),
         'data-disabled': flag(disabled),
         'data-required': flag(view.required),
+        'data-filled': flag(view.filled),
         'data-indicator': view.indicator ?? undefined,
     };
 

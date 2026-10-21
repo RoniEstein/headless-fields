@@ -141,6 +141,7 @@ export function useFileSelection<H>(
             focused: false,
             touched,
             required,
+            filled: value.length > 0,
         },
         maxReached: value.length >= definition.maxFiles && definition.maxFiles > 1,
         disabled,

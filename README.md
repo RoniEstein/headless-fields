@@ -155,7 +155,7 @@ comes from data attributes on every part, so a skin needs no logic:
 |---|---|
 | `data-state` | `idle`, `valid`, `invalid` |
 | `data-tone` | `error`, `info` (on every part; meant for the message) |
-| `data-focused`, `data-touched`, `data-disabled`, `data-required` | present or absent |
+| `data-focused`, `data-touched`, `data-disabled`, `data-required`, `data-filled` | present or absent |
 | `data-indicator` | `valid`, `invalid` (the icon being shown) |
 | `data-sized`, `data-has-start`, `data-has-end`, `data-reserve-indicator` | present or absent |
 

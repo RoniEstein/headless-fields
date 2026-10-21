@@ -123,6 +123,7 @@ export function useField<V>(
         focused: current.focused,
         touched: current.touched,
         required,
+        filled: current.raw !== '',
         chars: options.chars ?? definition.surface,
         setText(text) {
             const next = dispatch({ type: 'input', text });

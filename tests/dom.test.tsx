@@ -81,6 +81,20 @@ describe('Field', () => {
         expect(input.getAttribute('aria-describedby')).toBe(`${hint.id} ${error.id}`);
     });
 
+    test('data-filled follows the answer, for floating labels and the like', () => {
+        function Typed() {
+            const [value, setValue] = useState('');
+            return <Field definition={phone} value={value} onChange={setValue} />;
+        }
+        render(<Typed />);
+        const input = screen.getByLabelText(/Phone Number/);
+        const label = input.closest('[data-field]')!.querySelector('label')!;
+        expect(label.hasAttribute('data-filled')).toBe(false);
+        fireEvent.change(input, { target: { value: '2' } });
+        expect(label.hasAttribute('data-filled')).toBe(true);
+        expect(input.hasAttribute('data-filled')).toBe(true);
+    });
+
     test('a hint function follows the text typed so far', () => {
         function Counted() {
             const [value, setValue] = useState('');

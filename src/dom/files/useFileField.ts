@@ -145,6 +145,7 @@ export function useFileField(definition: FilesDefinition, options: FileFieldOpti
         'data-state': selection.view.status,
         'data-disabled': flag(selection.disabled),
         'data-required': flag(selection.view.required),
+        'data-filled': flag(selection.view.filled),
         'data-has-files': flag(selection.entries.length > 0),
         'data-max-reached': flag(selection.maxReached),
         'data-dragging': flag(dragging),
