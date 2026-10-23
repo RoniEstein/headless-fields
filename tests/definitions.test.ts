@@ -97,6 +97,17 @@ describe('dates', () => {
         expect(accept(birthdate, '04 / 01 / 992')).toBe('0401992');
     });
 
+    test('reads a whole autofilled or pasted date in any common shape', () => {
+        for (const text of [
+            '1980-01-02', '1980-1-2', '1980/01/02', '19800102', '1/2/1980', '01/02/1980',
+            '1-2-1980', '1.2.1980', 'January 2, 1980', 'Jan 2 1980', 'jan. 2nd, 1980', '2 January 1980',
+        ]) {
+            expect(accept(birthdate, text)).toBe('01021980');
+        }
+        expect(accept(birthdate, 'Sept 30, 1975')).toBe('09301975');
+        expect(accept(birthdate, 'Smarch 2, 1980')).not.toBe('01021980');
+    });
+
     test('describes the date as it is typed', () => {
         const result = resolveFeedback(birthdate, { raw: '0102', touched: false, required: false });
         expect(result).toMatchObject({ tone: 'info', message: 'January 2' });
