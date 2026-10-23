@@ -8,6 +8,39 @@ const MONTHS = [
 
 const SEPARATOR_REMNANTS = [' /', '  ', '/ '];
 
+const pad2 = (part: string) => part.padStart(2, '0');
+
+/** "jan", "January", "Sept." → 1-12, or 0 when it isn't a month name. */
+function monthNumber(name: string): number {
+    const key = name.toLowerCase().replace(/\.$/, '').slice(0, 3);
+    return MONTHS.findIndex((month) => month.toLowerCase().startsWith(key) && key.length === 3);
+}
+
+/**
+ * A whole date arriving at once, from autofill or paste, in any common shape:
+ * 1980-01-02, 1980/1/2, 19800102, 1/2/1980, 1-2-1980, 1.2.1980, January 2,
+ * 1980, Jan 2 1980 or 2 January 1980. Numbers without a name are read in
+ * this field's month-day-year order unless the year comes first.
+ */
+function wholeDate(text: string): string | null {
+    const yearFirst = text.match(/^(\d{4})\s*[-/.]\s*(\d{1,2})\s*[-/.]\s*(\d{1,2})$/);
+    if (yearFirst) return pad2(yearFirst[2]) + pad2(yearFirst[3]) + yearFirst[1];
+    const yearLast = text.match(/^(\d{1,2})\s*[-/.]\s*(\d{1,2})\s*[-/.]\s*(\d{4})$/);
+    if (yearLast) return pad2(yearLast[1]) + pad2(yearLast[2]) + yearLast[3];
+    // Eight bare digits can only be year-first when they can't be a month first.
+    const packed = text.match(/^((?:19|20)\d{2})(\d{2})(\d{2})$/);
+    if (packed && parseInt(text.slice(0, 2)) > 12) return packed[2] + packed[3] + packed[1];
+    const nameFirst = text.match(/^([a-z]{3,}\.?)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})$/i);
+    if (nameFirst && monthNumber(nameFirst[1]) > 0) {
+        return pad2(String(monthNumber(nameFirst[1]))) + pad2(nameFirst[2]) + nameFirst[3];
+    }
+    const dayFirst = text.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]{3,}\.?),?\s+(\d{4})$/i);
+    if (dayFirst && monthNumber(dayFirst[2]) > 0) {
+        return pad2(String(monthNumber(dayFirst[2]))) + pad2(dayFirst[1]) + dayFirst[3];
+    }
+    return null;
+}
+
 /** Day digit at the start of the day: 4-9 (or 3 in February) can only be 0X. */
 function startDay(digit: string, month: string): string {
     return digit > '3' || (digit === '3' && month === '02') ? '0' + digit : digit;
@@ -34,7 +67,8 @@ function finishParts(digits: string): string {
 }
 
 /**
- * MM / DD / YYYY, typed as 8 digits. Accepts autofilled ISO and US dates. A
+ * MM / DD / YYYY, typed as 8 digits. Accepts a whole autofilled or pasted date
+ * in any common shape (see wholeDate). A
  * separator typed after a single month or day digit finishes that part, so
  * "4/" is April and the next digit starts the day. A first digit that can only
  * start one month or day finishes it on its own: "3" is 03 and "05 / 7" is
@@ -43,10 +77,8 @@ function finishParts(digits: string): string {
  */
 export const monthDayYearMask: Mask = {
     accept(text) {
-        const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-        if (iso) return iso[2].padStart(2, '0') + iso[3].padStart(2, '0') + iso[1];
-        const us = text.match(/^(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})$/);
-        if (us) return us[1].padStart(2, '0') + us[2].padStart(2, '0') + us[3];
+        const whole = wholeDate(text.trim());
+        if (whole) return whole;
         // Only a separator just typed at the end pads; editing earlier in the
         // box never reshuffles parts already entered.
         const ended = text.match(/^(.*?)(\d)\s*[/.-]\s*$/);
