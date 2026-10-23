@@ -1,6 +1,6 @@
 {
     "name": "headless-fields",
-    "version": "0.7.1",
+    "version": "0.7.2",
     "description": "Headless form fields: a DOM-free core (masks, rules, feedback policy, field definitions), React hooks for any renderer, and unstyled DOM parts themed by skins.",
     "license": "MIT",
     "author": "Roni Estein",

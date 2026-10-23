@@ -6,10 +6,40 @@ const MONTHS = [
     'August', 'September', 'October', 'November', 'December',
 ];
 
+const SEPARATOR_REMNANTS = [' /', '  ', '/ '];
+
+/** Day digit at the start of the day: 4-9 (or 3 in February) can only be 0X. */
+function startDay(digit: string, month: string): string {
+    return digit > '3' || (digit === '3' && month === '02') ? '0' + digit : digit;
+}
+
+/**
+ * Pads a month or day the moment its first digit can mean only one thing:
+ * 2-9 is 0X for a month, 1 then 3-9 is January and the 3-9 starts the day,
+ * 4-9 is 0X for a day. 00 is not a month or a day, so the second 0 is refused.
+ */
+function finishParts(digits: string): string {
+    let out = '';
+    for (const digit of digits) {
+        if (out.length === 0) out = digit > '1' ? '0' + digit : digit;
+        else if (out.length === 1) {
+            if (out === '1' && digit > '2') out = '01' + startDay(digit, '01');
+            else if (!(out === '0' && digit === '0')) out += digit;
+        } else if (out.length === 2) out += startDay(digit, out);
+        else if (out.length === 3) {
+            if (!(out[2] === '0' && digit === '0')) out += digit;
+        } else out += digit;
+    }
+    return out;
+}
+
 /**
  * MM / DD / YYYY, typed as 8 digits. Accepts autofilled ISO and US dates. A
  * separator typed after a single month or day digit finishes that part, so
- * "4/" is April and the next digit starts the day.
+ * "4/" is April and the next digit starts the day. A first digit that can only
+ * start one month or day finishes it on its own: "3" is 03 and "05 / 7" is
+ * 05 / 07. A finished month or day shows its separator, so the cursor waits in
+ * the next part; backspace over that separator removes the digit before it.
  */
 export const monthDayYearMask: Mask = {
     accept(text) {
@@ -26,12 +56,22 @@ export const monthDayYearMask: Mask = {
                 return before + '0' + ended[2];
             }
         }
-        return text.replace(/\D/g, '').slice(0, 8);
+        const digits = text.replace(/\D/g, '').slice(0, 8);
+        // " / " shown after a finished part, with one character deleted: the
+        // user backspaced over the separator, so take the digit before it too.
+        const trailing = text.slice(text.search(/\D*$/));
+        if ((digits.length === 2 || digits.length === 4) && SEPARATOR_REMNANTS.includes(trailing)) {
+            return digits.slice(0, -1);
+        }
+        // Phones have no "/" key, so month and day finish themselves while they
+        // are being typed. A full or nearly full date is left alone, so editing
+        // inside it never reshuffles parts already entered.
+        return digits.length <= 4 ? finishParts(digits) : digits;
     },
     format(raw) {
         let out = raw.slice(0, 2);
-        if (raw.length > 2) out += ' / ' + raw.slice(2, 4);
-        if (raw.length > 4) out += ' / ' + raw.slice(4, 8);
+        if (raw.length >= 2) out += ' / ' + raw.slice(2, 4);
+        if (raw.length >= 4) out += ' / ' + raw.slice(4, 8);
         return out;
     },
     complete: (raw) => raw.length === 8,

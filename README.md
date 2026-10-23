@@ -28,11 +28,11 @@ everything above it. It is NOT YET IMPLEMENTED.
 Install the release tarball for a tag:
 
 ```bash
-bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.7.1
+bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.7.2
 ```
 
 The lockfile pins the tarball's integrity hash. Prefer this over
-`github:RoniEstein/headless-fields#v0.7.1` or a `git+https://github.com/…`
+`github:RoniEstein/headless-fields#v0.7.2` or a `git+https://github.com/…`
 URL: Bun resolves both through `GITHUB_API_URL`, which Forgejo and Gitea
 Actions point at their own forge, so installs in those CI runners fail.
 
@@ -168,7 +168,11 @@ cutting it off, so a pasted answer is never silently shortened. Render it
 with `multiline`.
 
 Separators finish a part: typing `4/` in a date is April (`04`) and moves on
-to the day; `1:` in a time is hour `01`.
+to the day; `1:` in a time is hour `01`. Phones' number keypads have no `/`, so
+a date's month or day also finishes itself once its first digit can mean only
+one thing: `3` is `03 / ` with the caret on the day, `1` waits for 10–12, and a
+day starting 4–9 moves on to the year. Backspace over the shown ` / ` removes
+the digit before it.
 
 `time()` gives the form 24-hour `HH:MM` (a database `09:00:00` loads as
 `09:00`). It also accepts `930p` or an autofilled `9:30 PM`, and reads the
