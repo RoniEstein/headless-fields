@@ -73,6 +73,30 @@ describe('dates', () => {
         expect(accept(birthdate, '04 / 04 / 1/')).toBe('04041');
     });
 
+    test('a month or day that can only mean one thing finishes itself (phones have no / key)', () => {
+        expect(accept(birthdate, '3')).toBe('03');
+        expect(display(birthdate, '03')).toBe('03 / ');
+        expect(accept(birthdate, '1')).toBe('1');
+        expect(accept(birthdate, '12')).toBe('12');
+        expect(accept(birthdate, '13')).toBe('013');
+        expect(accept(birthdate, '17')).toBe('0107');
+        expect(accept(birthdate, '00')).toBe('0');
+        expect(accept(birthdate, '04 / 7')).toBe('0407');
+        expect(display(birthdate, '0407')).toBe('04 / 07 / ');
+        expect(accept(birthdate, '04 / 3')).toBe('043');
+        expect(accept(birthdate, '02 / 3')).toBe('0203');
+        expect(accept(birthdate, '04 / 00')).toBe('040');
+        expect(accept(birthdate, '04 / 04 / 1')).toBe('04041');
+    });
+    test('backspace over a shown separator removes the digit before it', () => {
+        expect(accept(birthdate, '03 /')).toBe('0');
+        expect(accept(birthdate, '04 / 07 /')).toBe('040');
+        expect(accept(birthdate, '03 / ')).toBe('03');
+    });
+    test('editing inside a long date never reshuffles it', () => {
+        expect(accept(birthdate, '04 / 01 / 992')).toBe('0401992');
+    });
+
     test('describes the date as it is typed', () => {
         const result = resolveFeedback(birthdate, { raw: '0102', touched: false, required: false });
         expect(result).toMatchObject({ tone: 'info', message: 'January 2' });
