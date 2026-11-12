@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { useFieldContext } from '../context';
-import { renderPart, type ElementProps, type RenderProp } from '../files/props';
+import { renderPart, visuallyHidden, type ElementProps, type RenderProp } from '../files/props';
 import { FieldRoot } from '../parts';
 import type { FieldClassNames, FieldSlot } from '../skin';
 import { useRadioGroup, type RadioGroup as RadioGroupState, type RadioGroupOptions, type RadioOptionRef } from './useRadioGroup';
@@ -9,11 +9,19 @@ type AnyRadioGroup = RadioGroupState<string>;
 
 const RadioGroupContext = createContext<AnyRadioGroup | null>(null);
 
+/** Plain options, cards and segments style through different slots. */
+type ItemKind = 'radio' | 'card' | 'segment';
+
 interface ItemContextValue {
     option: RadioOptionRef<string>;
-    /** Plain options and cards style through different slots. */
-    card: boolean;
+    kind: ItemKind;
 }
+
+const SLOTS: Record<ItemKind, { item: FieldSlot; input: FieldSlot; label: FieldSlot; description: FieldSlot }> = {
+    radio: { item: 'radio', input: 'radioInput', label: 'radioLabel', description: 'radioDescription' },
+    card: { item: 'radioCard', input: 'radioCardInput', label: 'radioCardLabel', description: 'radioCardDescription' },
+    segment: { item: 'segment', input: 'segmentInput', label: 'segmentLabel', description: 'radioDescription' },
+};
 
 const RadioItemContext = createContext<ItemContextValue | null>(null);
 
@@ -26,7 +34,7 @@ export function useRadioGroupContext(part = 'useRadioGroupContext'): AnyRadioGro
 
 function useItem(part: string): ItemContextValue {
     const item = useContext(RadioItemContext);
-    if (!item) throw new Error(`<${part}> must be rendered inside <Radio> or <RadioCard>.`);
+    if (!item) throw new Error(`<${part}> must be rendered inside <Radio>, <RadioCard> or <RadioSegment>.`);
     return item;
 }
 
@@ -101,31 +109,36 @@ export const RadioOptions = Options('radioOptions', 'RadioOptions');
 /** The role="radiogroup" element around cards. */
 export const RadioCards = Options('radioCards', 'RadioCards');
 
+/** The role="radiogroup" element around segments: one row of choices. */
+export const RadioSegments = Options('segments', 'RadioSegments');
+
 export interface RadioItemProps<T extends string = string> extends PartProps {
     value: T;
     disabled?: boolean;
 }
 
-function Item(card: boolean) {
-    const part = card ? 'RadioCard' : 'Radio';
+function Item(kind: ItemKind) {
+    const part = kind === 'card' ? 'RadioCard' : kind === 'segment' ? 'RadioSegment' : 'Radio';
     return function ItemPart({ value, disabled, children, className, render }: RadioItemProps) {
         const group = useRadioGroupContext(part);
         const { slotProps } = useFieldContext(part);
         const option = { value, disabled };
-        const getter = card ? group.getCardProps : group.getItemProps;
+        const slots = SLOTS[kind];
+        const getter = kind === 'radio' ? group.getItemProps : group.getCardProps;
+        // A segment shows no radio dot: the whole segment is the control, and
+        // the native radio stays focusable for the keyboard and the form.
+        const inputProps = kind === 'segment' ? { ...slotProps(slots.input), style: visuallyHidden } : slotProps(slots.input);
         const props = getter(option, {
-            ...slotProps(card ? 'radioCard' : 'radio', className),
+            ...slotProps(slots.item, className),
             children: (
                 <>
-                    <input {...group.getInputProps(option, { ...slotProps(card ? 'radioCardInput' : 'radioInput') })} />
+                    <input {...group.getInputProps(option, inputProps)} />
                     {children}
                 </>
             ),
         });
         const state = { checked: group.value === value, disabled: !!(group.disabled || disabled) };
-        return (
-            <RadioItemContext.Provider value={{ option, card }}>{renderPart('div', props, render, state)}</RadioItemContext.Provider>
-        );
+        return <RadioItemContext.Provider value={{ option, kind }}>{renderPart('div', props, render, state)}</RadioItemContext.Provider>;
     };
 }
 
@@ -133,23 +146,39 @@ function Item(card: boolean) {
  * One plain option: the native radio, then your RadioLabel (and an optional
  * short RadioDescription). Only the radio and its label choose it.
  */
-export const Radio = Item(false);
+export const Radio = Item('radio');
 
 /**
  * One option as a card: the native radio, a RadioLabel as its title and a
  * RadioDescription holding any markup (lists, prices, badges). A click
  * anywhere on the card chooses it; links and buttons inside keep their own.
  */
-export const RadioCard = Item(true);
+export const RadioCard = Item('card');
+
+/**
+ * One option in a segmented row: the native radio (visually hidden, still
+ * focusable), then a RadioLabel holding an optional RadioIcon and the text.
+ * A click anywhere on the segment chooses it.
+ */
+export const RadioSegment = Item('segment');
+
+/** A decorative icon inside an option's label (aria-hidden). */
+export function RadioIcon({ children, className, render }: PartProps) {
+    const group = useRadioGroupContext('RadioIcon');
+    const { option } = useItem('RadioIcon');
+    const { slotProps } = useFieldContext('RadioIcon');
+    const props: ElementProps = { ...group.data, 'aria-hidden': true, ...slotProps('segmentIcon', className), children };
+    return renderPart('span', props, render, partState(group, option));
+}
 
 /** The option's accessible name: a <label> for its radio. Keep it short;
  *  put details in RadioDescription. */
 export function RadioLabel({ children, className, render }: PartProps) {
     const group = useRadioGroupContext('RadioLabel');
-    const { option, card } = useItem('RadioLabel');
+    const { option, kind } = useItem('RadioLabel');
     const { slotProps } = useFieldContext('RadioLabel');
     const props = group.getOptionLabelProps(option, {
-        ...slotProps(card ? 'radioCardLabel' : 'radioLabel', className),
+        ...slotProps(SLOTS[kind].label, className),
         children,
     });
     return renderPart('label', props, render, partState(group, option));
@@ -159,10 +188,10 @@ export function RadioLabel({ children, className, render }: PartProps) {
  *  any markup. */
 export function RadioDescription({ children, className, render }: PartProps) {
     const group = useRadioGroupContext('RadioDescription');
-    const { option, card } = useItem('RadioDescription');
+    const { option, kind } = useItem('RadioDescription');
     const { slotProps } = useFieldContext('RadioDescription');
     const props: ElementProps = group.getDescriptionProps(option, {
-        ...slotProps(card ? 'radioCardDescription' : 'radioDescription', className),
+        ...slotProps(SLOTS[kind].description, className),
         children,
     });
     return renderPart('div', props, render, partState(group, option));

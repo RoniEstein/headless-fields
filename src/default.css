@@ -26,6 +26,8 @@
         --hf-error-border: #f87171;
         --hf-valid: #15803d;
         --hf-radius: 0.5rem;
+        /* Behind a segmented choice's options. */
+        --hf-segments-track: #f3f4f6;
         /* Padding and border around the typed text, for sized fields. */
         --hf-chrome: calc(1.5rem + 2px);
 
@@ -157,6 +159,59 @@
     }
     :where([data-skin='default'] [data-slot='radioCard']:has(:focus-visible)) {
         box-shadow: 0 0 0 3px var(--hf-focus-ring);
+    }
+
+    /* Segmented choice: one row of options, the chosen one raised */
+    :where([data-skin='default'] [data-slot='segments']) {
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-self: flex-start;
+        gap: 0.125rem;
+        padding: 0.125rem;
+        background: var(--hf-segments-track);
+        border: 1px solid var(--hf-border);
+        border-radius: var(--hf-radius);
+    }
+    :where([data-skin='default'] [data-slot='segment']) {
+        position: relative;
+        display: flex;
+        border-radius: calc(var(--hf-radius) - 0.125rem);
+        color: var(--hf-muted);
+    }
+    :where([data-skin='default'] [data-slot='segment'][data-checked]) {
+        background: var(--hf-surface);
+        color: var(--hf-text);
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+    }
+    :where([data-skin='default'] [data-slot='segment']:has(:focus-visible)) {
+        box-shadow: 0 0 0 3px var(--hf-focus-ring);
+    }
+    :where([data-skin='default'] [data-slot='segment'][data-disabled]) {
+        opacity: 0.5;
+    }
+    :where([data-skin='default'] [data-slot='segmentLabel']) {
+        display: inline-flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        min-height: 2rem;
+        padding: 0 0.75rem;
+        font-weight: 500;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    :where([data-skin='default'] [data-slot='segment'][data-disabled] [data-slot='segmentLabel']) {
+        cursor: not-allowed;
+    }
+    :where([data-skin='default'] [data-slot='segmentIcon']) {
+        display: inline-flex;
+        width: 1rem;
+        height: 1rem;
+    }
+    :where([data-skin='default'] [data-slot='segmentIcon'] > svg) {
+        width: 100%;
+        height: 100%;
     }
 
     /* File fields */

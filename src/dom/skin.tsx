@@ -24,7 +24,7 @@ export type FieldSlot =
     | 'fileRemove'
     | 'fileRejections'
     | 'fileRejection'
-    // Radio groups: plain options, and cards for options with detail
+    // Radio groups: plain options, cards for options with detail
     | 'radioOptions'
     | 'radio'
     | 'radioInput'
@@ -34,7 +34,13 @@ export type FieldSlot =
     | 'radioCard'
     | 'radioCardInput'
     | 'radioCardLabel'
-    | 'radioCardDescription';
+    | 'radioCardDescription'
+    // Segmented choice: the same radio group as one row of segments
+    | 'segments'
+    | 'segment'
+    | 'segmentInput'
+    | 'segmentLabel'
+    | 'segmentIcon';
 
 /** Icons a skin can supply. Text fields use valid/invalid; file fields use
  *  upload (in triggers), remove (in remove buttons) and file (rows without
