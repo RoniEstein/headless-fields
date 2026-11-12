@@ -206,6 +206,24 @@ await page.locator('#d-notes').fill('Ring the side door bell');
 await page.locator('#d-contact-phone').check();
 await page.locator('#radio-after').focus();
 const dateText = await page.locator('#d-date').inputValue();
+
+// 10. Segmented choice: a hidden native radio per segment, arrows skip the disabled one.
+await page.locator('#d-kind-bug').focus();
+await page.keyboard.press('ArrowRight');
+const seg = await page.evaluate(() => ({
+    focus: document.activeElement?.id,
+    data: new FormData(document.getElementById('defaults')).get('kind'),
+    checked: document.getElementById('d-kind-idea').closest('[data-slot=segment]').hasAttribute('data-checked'),
+    ring: getComputedStyle(document.getElementById('d-kind-idea').closest('[data-slot=segment]')).boxShadow,
+    dot: document.getElementById('d-kind-idea').getBoundingClientRect().width,
+    track: getComputedStyle(document.querySelector('[data-slot=segments]')).display,
+}));
+check('arrow keys move between segments and choose', seg.focus === 'd-kind-idea' && seg.data === 'idea' && seg.checked, JSON.stringify(seg));
+check('a focused segment shows a ring and no radio dot', seg.ring !== 'none' && seg.dot <= 1 && seg.track.endsWith('flex'), JSON.stringify(seg));
+await page.keyboard.press('ArrowRight');
+check('arrows skip a disabled segment', (await page.evaluate(() => document.activeElement?.id)) === 'd-kind-bug');
+await page.getByText('Idea', { exact: true }).click();
+check('clicking a segment chooses it', await page.evaluate(() => document.getElementById('d-kind-idea').checked));
 check('typing 2/ moves on to the day', dateText === '02 / 29 / 2023', JSON.stringify(dateText));
 if (process.env.SHOT) await page.locator('#defaults').screenshot({ path: process.env.SHOT });
 

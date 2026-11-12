@@ -9,6 +9,7 @@ import {
     FilePickerField,
     RadioCardsField,
     RadioGroupField,
+    SegmentedChoice,
     useFileField,
     type FieldSkin,
 } from '../../src/dom';
@@ -130,6 +131,7 @@ function Defaults() {
     const [notes, setNotes] = useState('');
     const [room, setRoom] = useState('');
     const [contact, setContact] = useState('');
+    const [kind, setKind] = useState<'bug' | 'idea' | 'other'>('bug');
     return (
         <form id="defaults" style={{ display: 'grid', gap: 20, maxWidth: 520, padding: 24 }}>
             <Field id="d-phone" definition={phone} value={tel} onChange={setTel} required hint="Mobile preferred" />
@@ -137,6 +139,18 @@ function Defaults() {
             <Field id="d-room" definition={roomNote} label="Room (optional)" placeholder="e.g. Training room" value={room} onChange={setRoom} />
             <Field id="d-notes" definition={notesText} label="Notes" multiline rows={3} value={notes} onChange={setNotes} hint="Anything we should know" />
             <RadioGroupField id="d-contact" label="Contact" options={[{ value: 'email', label: 'Email' }, { value: 'phone', label: 'Phone', description: 'Weekdays only' }]} value={contact} onChange={setContact} hint="How we reach you" />
+            <SegmentedChoice
+                id="d-kind"
+                name="kind"
+                label="Type"
+                options={[
+                    { value: 'bug', label: 'Bug', icon: <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" /></svg> },
+                    { value: 'idea', label: 'Idea' },
+                    { value: 'other', label: 'Other', disabled: true },
+                ]}
+                value={kind}
+                onChange={setKind}
+            />
         </form>
     );
 }

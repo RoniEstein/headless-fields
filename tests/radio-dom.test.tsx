@@ -11,6 +11,7 @@ import {
     RadioGroupField,
     RadioGroupLabel,
     RadioLabel,
+    SegmentedChoice,
     useRadioGroup,
     type FieldSkin,
 } from '../src/dom';
@@ -241,5 +242,92 @@ describe('composition', () => {
         fireEvent.click(screen.getByLabelText('M'));
         expect((screen.getByLabelText('M') as HTMLInputElement).checked).toBe(true);
         expect(screen.getByRole('radiogroup', { name: 'Size' })).toBeTruthy();
+    });
+});
+
+describe('SegmentedChoice', () => {
+    const statuses = [
+        { value: 'new', label: 'New', icon: <svg data-testid="icon-new" /> },
+        { value: 'heard', label: 'Heard' },
+        { value: 'done', label: 'Resolved', disabled: true },
+    ] as const;
+
+    function Segmented({ onValue, required }: { onValue?: (v: string) => void; required?: boolean }) {
+        const [value, setValue] = useState<'new' | 'heard' | 'done' | ''>('new');
+        return (
+            <>
+                <SegmentedChoice
+                    label="Status"
+                    name="status"
+                    options={statuses}
+                    value={value}
+                    required={required}
+                    onChange={(v) => {
+                        setValue(v);
+                        onValue?.(v);
+                    }}
+                />
+                <button type="button">after</button>
+            </>
+        );
+    }
+
+    test('a labelled radiogroup of native radios, named by their labels', () => {
+        render(<Segmented />);
+        const group = screen.getByRole('radiogroup', { name: 'Status' });
+        expect(group.getAttribute('data-slot')).toBe('segments');
+        const radios = screen.getAllByRole('radio') as HTMLInputElement[];
+        expect(radios.map((r) => r.type)).toEqual(['radio', 'radio', 'radio']);
+        expect(radios.every((r) => r.name === 'status')).toBe(true);
+        expect(screen.getByRole('radio', { name: 'New' })).toBe(radios[0]);
+        expect(radios[0].checked).toBe(true);
+        // The radio dot is hidden but the input stays in the tab order.
+        expect(radios[0].style.position).toBe('absolute');
+        expect(radios[0].tabIndex).not.toBe(-1);
+    });
+
+    test('icons are decorative and sit inside the label', () => {
+        render(<Segmented />);
+        const icon = screen.getByTestId('icon-new').parentElement!;
+        expect(icon.getAttribute('data-slot')).toBe('segmentIcon');
+        expect(icon.getAttribute('aria-hidden')).toBe('true');
+        expect(icon.closest('label')?.getAttribute('data-slot')).toBe('segmentLabel');
+    });
+
+    test('a click anywhere on a segment chooses it; a disabled one cannot be chosen', () => {
+        const seen: string[] = [];
+        render(<Segmented onValue={(v) => seen.push(v)} />);
+        const heard = screen.getByRole('radio', { name: 'Heard' }) as HTMLInputElement;
+        fireEvent.click(heard.closest('[data-slot="segment"]')!);
+        expect(seen).toEqual(['heard']);
+        expect(heard.closest('[data-slot="segment"]')?.hasAttribute('data-checked')).toBe(true);
+        const done = screen.getByRole('radio', { name: 'Resolved' }) as HTMLInputElement;
+        expect(done.disabled).toBe(true);
+        fireEvent.click(done.closest('[data-slot="segment"]')!);
+        expect(seen).toEqual(['heard']);
+    });
+
+    test('shares the field frame: required feedback and server errors', () => {
+        render(<SegmentedChoice label="Type" options={statuses} value="" onChange={() => {}} serverError="Pick a type" />);
+        const group = screen.getByRole('radiogroup', { name: 'Type' });
+        expect(group.getAttribute('aria-invalid')).toBe('true');
+        expect(group.getAttribute('aria-describedby')).toBe(screen.getByText('Pick a type').id);
+    });
+
+    test('styles through its own slots', () => {
+        const skin: FieldSkin = {
+            classNames: { segments: 'row', segment: 'seg', segmentLabel: 'text', segmentInput: 'dot', segmentIcon: 'ico', radio: 'plain' },
+        };
+        render(
+            <FieldSkinProvider skin={skin}>
+                <Segmented />
+            </FieldSkinProvider>,
+        );
+        expect(screen.getByRole('radiogroup').className).toBe('row');
+        const heard = screen.getByRole('radio', { name: 'Heard' });
+        expect(heard.className).toBe('dot');
+        expect(heard.parentElement?.className).toBe('seg');
+        expect(screen.getByText('Heard').className).toBe('text');
+        expect(screen.getByTestId('icon-new').parentElement?.className).toBe('ico');
     });
 });

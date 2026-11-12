@@ -7,8 +7,11 @@ import {
     RadioDescription,
     RadioGroup,
     RadioGroupLabel,
+    RadioIcon,
     RadioLabel,
     RadioOptions,
+    RadioSegment,
+    RadioSegments,
     type RadioGroupProps,
 } from './parts';
 
@@ -83,6 +86,45 @@ export function RadioCardsField<T extends string>({ label, options, renderOption
                     </RadioCard>
                 ))}
             </RadioCards>
+            <FieldMessage />
+            {children}
+        </RadioGroup>
+    );
+}
+
+export interface SegmentedOption<T extends string = string> extends Omit<RadioChoice<T>, 'description'> {
+    /** Shown before the label, hidden from screen readers (the label names
+     *  the option). Any node: an SVG component, an <img>, an emoji. */
+    icon?: ReactNode;
+}
+
+export interface SegmentedChoiceProps<T extends string> extends Omit<RadioTemplateProps<T>, 'options'> {
+    options: readonly SegmentedOption<T>[];
+}
+
+/**
+ * A few short, mutually exclusive answers shown as one row of segments
+ * (status, view mode, a type picker). The same radio group as
+ * RadioGroupField: native radios, arrow keys, labelling, the field frame and
+ * messages. Only the layout and the slots differ, so a skin decides the row
+ * (wrap it, make it a grid on phones). For more than about five options or
+ * long labels, use RadioGroupField.
+ */
+export function SegmentedChoice<T extends string>({ label, options, children, ...group }: SegmentedChoiceProps<T>) {
+    return (
+        <RadioGroup<T> {...group}>
+            {label && <RadioGroupLabel>{label}</RadioGroupLabel>}
+            <FieldHint />
+            <RadioSegments>
+                {options.map((option) => (
+                    <RadioSegment key={option.value} value={option.value} disabled={option.disabled}>
+                        <RadioLabel>
+                            {option.icon && <RadioIcon>{option.icon}</RadioIcon>}
+                            {option.label}
+                        </RadioLabel>
+                    </RadioSegment>
+                ))}
+            </RadioSegments>
             <FieldMessage />
             {children}
         </RadioGroup>
