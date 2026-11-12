@@ -28,11 +28,11 @@ everything above it. It is NOT YET IMPLEMENTED.
 Install the release tarball for a tag:
 
 ```bash
-bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.7.3
+bun add https://codeload.github.com/RoniEstein/headless-fields/tar.gz/refs/tags/v0.8.0
 ```
 
 The lockfile pins the tarball's integrity hash. Prefer this over
-`github:RoniEstein/headless-fields#v0.7.3` or a `git+https://github.com/…`
+`github:RoniEstein/headless-fields#v0.8.0` or a `git+https://github.com/…`
 URL: Bun resolves both through `GITHUB_API_URL`, which Forgejo and Gitea
 Actions point at their own forge, so installs in those CI runners fail.
 
@@ -62,6 +62,7 @@ selectors, so your own CSS always wins. Theme it with custom properties on
     --hf-border: #c2bab5;
     --hf-error: #a05252;
     --hf-radius: 0.5rem;
+    --hf-segments-track: #f3f4f6; /* behind a segmented choice */
 }
 ```
 
@@ -522,6 +523,29 @@ title, described by its content (a `<div>`, so lists, prices and badges are
 valid), and a click anywhere on it chooses it (links and buttons inside keep
 their own clicks).
 
+`SegmentedChoice` is the same radio group laid out as one row of segments,
+for a few short answers picked often: a status, a view mode, a feedback type.
+Each segment is a native radio (visually hidden, still focusable and
+submitted) plus its label; a click anywhere on the segment chooses it, and
+the arrow keys move and choose as in any radio group. An option may carry an
+`icon` (any node, `aria-hidden`; the label names the option). The row's
+shape belongs to the skin: wrap it, stretch it, or make it a 2×2 grid on
+phones. More than about five options or long labels: use `RadioGroupField`.
+
+```tsx
+import { SegmentedChoice } from 'headless-fields/dom';
+
+<SegmentedChoice label="Status" name="status" value={status} onChange={setStatus}
+    options={[
+        { value: 'new', label: 'New', icon: <CircleDot /> },
+        { value: 'heard', label: 'Heard', icon: <Ear /> },
+        { value: 'resolved', label: 'Resolved', icon: <CheckCircle2 /> },
+    ]} />
+```
+
+Composed: `RadioSegments` (the `role="radiogroup"` row), `RadioSegment` (one
+option), `RadioLabel` and `RadioIcon` inside it.
+
 ```tsx
 import { RadioCardsField, RadioGroupField } from 'headless-fields/dom';
 
@@ -594,7 +618,8 @@ Native or a custom control.
 
 Plain: `radioOptions`, `radio`, `radioInput`, `radioLabel`,
 `radioDescription`. Cards: `radioCards`, `radioCard`, `radioCardInput`,
-`radioCardLabel`, `radioCardDescription`. Plus the shared `label`,
+`radioCardLabel`, `radioCardDescription`. Segments: `segments`, `segment`,
+`segmentInput` (hidden), `segmentLabel`, `segmentIcon`. Plus the shared `label`,
 `requiredMark`, `hint` and `message`. Every part carries `data-state`, `data-tone`,
 `data-touched`, `data-required`; options add `data-checked` and
 `data-disabled`. Style focus with `has-[:focus-visible]`.
@@ -608,6 +633,10 @@ classNames: {
     radioCard: 'relative cursor-pointer rounded-xl border p-4 data-checked:border-accent has-[:focus-visible]:ring-2',
     radioCardLabel: 'font-semibold',
     radioCardDescription: 'mt-2 text-sm',
+    segments: 'grid grid-cols-2 gap-0.5 rounded-lg bg-muted p-0.5 sm:inline-flex',
+    segment: 'rounded-md text-muted-foreground data-checked:bg-background data-checked:text-foreground has-[:focus-visible]:ring-2',
+    segmentLabel: 'flex min-h-11 cursor-pointer items-center justify-center gap-1.5 px-3 text-sm font-medium sm:min-h-8',
+    segmentIcon: 'size-4 [&>svg]:size-full',
 }
 ```
 

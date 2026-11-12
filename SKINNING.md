@@ -308,6 +308,11 @@ Rules for using it well:
 | `radioInput`, `radioCardInput` | the native radio | radio |
 | `radioLabel`, `radioCardLabel` | the option's `<label>` | radio |
 | `radioDescription`, `radioCardDescription` | detail under an option | radio |
+| `segments` | the `role="radiogroup"` row of a segmented choice | segmented |
+| `segment` | one segment; `data-checked`, `data-disabled`; focus via `:has(:focus-visible)` | segmented |
+| `segmentInput` | the native radio, visually hidden by the part | segmented |
+| `segmentLabel` | the segment's `<label>` (fill the segment with it) | segmented |
+| `segmentIcon` | `<span aria-hidden>` around an option's icon | segmented |
 | `trigger` | the `<label>` acting as the choose button | files |
 | `dropArea`, `dropHint` | drop zone and its text | files |
 | `fileSummary`, `fileList`, `fileItem`, `filePreview`, `fileName`, `fileSize`, `fileRemove` | the chosen files | files |
